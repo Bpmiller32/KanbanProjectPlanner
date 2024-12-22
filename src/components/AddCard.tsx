@@ -18,13 +18,21 @@ export const AddCard = ({ column, setCards }: AddCardProps) => {
 
     if (!text.trim().length) return;
 
-    const newCard = {
-      column,
-      title: text.trim(),
-      id: Math.random().toString(),
-    };
+    setCards((prevCards) => {
+      // Find the highest order in the target column
+      const columnCards = prevCards.filter(card => card.column === column);
+      const highestOrder = columnCards.reduce((max, card) => 
+        Math.max(max, card.order || 0), -1);
 
-    setCards((pv) => [...pv, newCard]);
+      const newCard = {
+        column,
+        title: text.trim(),
+        id: Math.random().toString(),
+        order: highestOrder + 1
+      };
+
+      return [...prevCards, newCard];
+    });
 
     setAdding(false);
   };

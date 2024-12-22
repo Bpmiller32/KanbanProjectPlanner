@@ -4,4 +4,5 @@ export interface CardType {
   title: string;
   id: string;
   column: ColumnType;
+  order: number;
 }
