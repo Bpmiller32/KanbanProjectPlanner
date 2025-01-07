@@ -22,16 +22,16 @@ export const Board = () => {
       // If collection is empty, initialize with default cards
       if (cardsData.length === 0) {
         const defaultCards = [
-          { title: "SOX compliance checklist", id: "2", column: "backlog", order: 0 },
-          { title: "Look into render bug in dashboard", id: "1", column: "backlog", order: 1 },
-          { title: "[SPIKE] Migrate to Azure", id: "3", column: "backlog", order: 2 },
-          { title: "Document Notifications service", id: "4", column: "backlog", order: 3 },
-          { title: "Research DB options for new microservice", id: "5", column: "todo", order: 0 },
-          { title: "Postmortem for outage", id: "6", column: "todo", order: 1 },
-          { title: "Sync with product on Q3 roadmap", id: "7", column: "todo", order: 2 },
-          { title: "Refactor context providers to use Zustand", id: "8", column: "doing", order: 0 },
-          { title: "Add logging to daily CRON", id: "9", column: "doing", order: 1 },
-          { title: "Set up DD dashboards for Lambda listener", id: "10", column: "done", order: 0 }
+          { title: "SOX compliance checklist", id: "2", column: "backlog", order: 0, completed: false },
+          { title: "Look into render bug in dashboard", id: "1", column: "backlog", order: 1, completed: false },
+          { title: "[SPIKE] Migrate to Azure", id: "3", column: "backlog", order: 2, completed: false },
+          { title: "Document Notifications service", id: "4", column: "backlog", order: 3, completed: false },
+          { title: "Research DB options for new microservice", id: "5", column: "todo", order: 0, completed: false },
+          { title: "Postmortem for outage", id: "6", column: "todo", order: 1, completed: false },
+          { title: "Sync with product on Q3 roadmap", id: "7", column: "todo", order: 2, completed: false },
+          { title: "Refactor context providers to use Zustand", id: "8", column: "doing", order: 0, completed: false },
+          { title: "Add logging to daily CRON", id: "9", column: "doing", order: 1, completed: false },
+          { title: "Set up DD dashboards for Lambda listener", id: "10", column: "done", order: 0, completed: false }
         ];
 
         // Add default cards to Firestore
@@ -39,7 +39,8 @@ export const Board = () => {
           await setDoc(doc(cardsRef, card.id), {
             title: card.title,
             column: card.column,
-            order: card.order
+            order: card.order,
+            completed: card.completed || false
           });
         }
         
@@ -101,7 +102,8 @@ export const Board = () => {
       setDoc(doc(cardsRef, card.id), {
         title: card.title,
         column: card.column,
-        order: card.order
+            order: card.order,
+            completed: card.completed || false
       })
     );
 

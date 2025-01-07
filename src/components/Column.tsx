@@ -190,7 +190,7 @@ export const Column: React.FC<ColumnProps> = ({
         }`}
       >
         {filteredCards.map((c) => {
-          return <Card key={c.id} {...c} handleDragStart={handleDragStart} isDragging={isDragging} />;
+          return <Card key={c.id} {...c} handleDragStart={handleDragStart} isDragging={isDragging} setCards={setCards} />;
         })}
         <DropIndicator beforeId={null} column={column} />
         <AddCard column={column} setCards={setCards} />

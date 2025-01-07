@@ -1,7 +1,6 @@
 import { Dispatch, FormEvent, SetStateAction, useState } from "react";
 import { ColumnType } from "../types/ColumnType";
 import { CardType } from "../types/CardType";
-import { motion } from "framer-motion";
 import { FiPlus } from "react-icons/fi";
 
 type AddCardProps = {
@@ -28,27 +27,31 @@ export const AddCard = ({ column, setCards }: AddCardProps) => {
         column,
         title: text.trim(),
         id: Math.random().toString(),
-        order: highestOrder + 1
+        order: highestOrder + 1,
+        completed: false
       };
 
       return [...prevCards, newCard];
     });
 
+    setText("");
     setAdding(false);
   };
 
   return (
     <>
       {adding ? (
-        <motion.form layout onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="opacity-100 transition-opacity duration-200">
           <textarea
             onChange={(e) => setText(e.target.value)}
+            value={text}
             autoFocus
             placeholder="Add new task..."
             className="w-full rounded border border-violet-400 bg-violet-400/20 p-3 text-sm text-neutral-50 placeholder-violet-300 focus:outline-0"
           />
           <div className="mt-1.5 flex items-center justify-end gap-1.5">
             <button
+              type="button"
               onClick={() => setAdding(false)}
               className="px-3 py-1.5 text-xs text-neutral-400 transition-colors hover:text-neutral-50"
             >
@@ -62,16 +65,15 @@ export const AddCard = ({ column, setCards }: AddCardProps) => {
               <FiPlus />
             </button>
           </div>
-        </motion.form>
+        </form>
       ) : (
-        <motion.button
-          layout
+        <button
           onClick={() => setAdding(true)}
           className="flex w-full items-center gap-1.5 px-3 py-1.5 text-xs text-neutral-400 transition-colors hover:text-neutral-50"
         >
           <span>Add card</span>
           <FiPlus />
-        </motion.button>
+        </button>
       )}
     </>
   );

@@ -5,4 +5,5 @@ export interface CardType {
   id: string;
   column: ColumnType;
   order: number;
+  completed?: boolean;
 }
