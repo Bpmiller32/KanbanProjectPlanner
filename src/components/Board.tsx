@@ -22,16 +22,16 @@ export const Board = () => {
       // If collection is empty, initialize with default cards
       if (cardsData.length === 0) {
         const defaultCards = [
-          { title: "SOX compliance checklist", id: "2", column: "backlog", order: 0, completed: false },
-          { title: "Look into render bug in dashboard", id: "1", column: "backlog", order: 1, completed: false },
-          { title: "[SPIKE] Migrate to Azure", id: "3", column: "backlog", order: 2, completed: false },
-          { title: "Document Notifications service", id: "4", column: "backlog", order: 3, completed: false },
-          { title: "Research DB options for new microservice", id: "5", column: "todo", order: 0, completed: false },
-          { title: "Postmortem for outage", id: "6", column: "todo", order: 1, completed: false },
-          { title: "Sync with product on Q3 roadmap", id: "7", column: "todo", order: 2, completed: false },
-          { title: "Refactor context providers to use Zustand", id: "8", column: "doing", order: 0, completed: false },
-          { title: "Add logging to daily CRON", id: "9", column: "doing", order: 1, completed: false },
-          { title: "Set up DD dashboards for Lambda listener", id: "10", column: "done", order: 0, completed: false }
+          { title: "SOX compliance checklist", id: "2", column: "backlog", order: 0, completed: false, createdBy: "System", lastEditedBy: "System", lastEditedTime: Date.now() },
+          { title: "Look into render bug in dashboard", id: "1", column: "backlog", order: 1, completed: false, createdBy: "System", lastEditedBy: "System", lastEditedTime: Date.now() },
+          { title: "[SPIKE] Migrate to Azure", id: "3", column: "backlog", order: 2, completed: false, createdBy: "System", lastEditedBy: "System", lastEditedTime: Date.now() },
+          { title: "Document Notifications service", id: "4", column: "backlog", order: 3, completed: false, createdBy: "System", lastEditedBy: "System", lastEditedTime: Date.now() },
+          { title: "Research DB options for new microservice", id: "5", column: "todo", order: 0, completed: false, createdBy: "System", lastEditedBy: "System", lastEditedTime: Date.now() },
+          { title: "Postmortem for outage", id: "6", column: "todo", order: 1, completed: false, createdBy: "System", lastEditedBy: "System", lastEditedTime: Date.now() },
+          { title: "Sync with product on Q3 roadmap", id: "7", column: "todo", order: 2, completed: false, createdBy: "System", lastEditedBy: "System", lastEditedTime: Date.now() },
+          { title: "Refactor context providers to use Zustand", id: "8", column: "doing", order: 0, completed: false, createdBy: "System", lastEditedBy: "System", lastEditedTime: Date.now() },
+          { title: "Add logging to daily CRON", id: "9", column: "doing", order: 1, completed: false, createdBy: "System", lastEditedBy: "System", lastEditedTime: Date.now() },
+          { title: "Set up DD dashboards for Lambda listener", id: "10", column: "done", order: 0, completed: false, createdBy: "System", lastEditedBy: "System", lastEditedTime: Date.now() }
         ];
 
         // Add default cards to Firestore
@@ -40,7 +40,10 @@ export const Board = () => {
             title: card.title,
             column: card.column,
             order: card.order,
-            completed: card.completed || false
+            completed: card.completed || false,
+            createdBy: card.createdBy,
+            lastEditedBy: card.lastEditedBy,
+            lastEditedTime: card.lastEditedTime
           });
         }
         
@@ -98,14 +101,27 @@ export const Board = () => {
     });
 
     // Update all cards in Firestore
-    const updates = newCards.map(card => 
-      setDoc(doc(cardsRef, card.id), {
+    const updates = newCards.map(card => {
+      // Find the original card to check if it was modified
+      const originalCard = cards.find(c => c.id === card.id);
+      const wasModified = !originalCard || 
+        originalCard.title !== card.title ||
+        originalCard.column !== card.column ||
+        originalCard.completed !== card.completed ||
+        originalCard.lastEditedBy !== card.lastEditedBy;
+
+      const cardData = {
         title: card.title,
         column: card.column,
-            order: card.order,
-            completed: card.completed || false
-      })
-    );
+        order: card.order,
+        completed: card.completed || false,
+        createdBy: card.createdBy || 'Unknown',
+        lastEditedBy: card.lastEditedBy || card.createdBy || 'Unknown',
+        // Only update lastEditedTime if the card was modified or it's missing
+        lastEditedTime: wasModified ? Date.now() : (card.lastEditedTime || Date.now())
+      };
+      return setDoc(doc(cardsRef, card.id), cardData);
+    });
 
     // Wait for all updates to complete
     await Promise.all(updates).catch(console.error);

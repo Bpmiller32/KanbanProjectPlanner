@@ -6,4 +6,7 @@ export interface CardType {
   column: ColumnType;
   order: number;
   completed?: boolean;
+  createdBy: string;
+  lastEditedBy: string;
+  lastEditedTime: number; // Unix timestamp in milliseconds
 }
