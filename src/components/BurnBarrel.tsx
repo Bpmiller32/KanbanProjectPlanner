@@ -22,7 +22,17 @@ export const BurnBarrel = ({
   const handleDragEnd = (e: DragEvent) => {
     const cardId = e.dataTransfer.getData("cardId");
 
-    setCards((pv) => pv.filter((c) => c.id !== cardId));
+    setCards((prevCards) => 
+      prevCards.map((card) =>
+        card.id === cardId
+          ? {
+              ...card,
+              isArchived: true,
+              lastMovedTime: Date.now()
+            }
+          : card
+      )
+    );
 
     setActive(false);
   };

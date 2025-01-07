@@ -1,99 +1,114 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { CardType } from "../types/CardType";
-import { ColumnType } from "../types/ColumnType";
 import { DropIndicator } from "./DropIndicator";
 
 interface CardProps extends CardType {
   handleDragStart: (e: React.DragEvent<HTMLDivElement>, card: CardType) => void;
   isDragging?: boolean;
   setCards: React.Dispatch<React.SetStateAction<CardType[]>>;
+  editorName: string;
+  setEditorName: React.Dispatch<React.SetStateAction<string>>;
 }
 
-export const Card = ({ 
-  title, 
-  id, 
-  column, 
-  order, 
-  completed, 
+export const Card = ({
+  title,
+  id,
+  column,
+  order,
+  completed,
   createdBy,
   lastEditedBy,
   lastEditedTime,
-  handleDragStart, 
-  isDragging, 
-  setCards 
+  lastMovedTime,
+  isArchived,
+  handleDragStart,
+  isDragging,
+  setCards,
+  editorName,
+  setEditorName,
 }: CardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
-  const [editorName, setEditorName] = useState("");
   const [showNameInput, setShowNameInput] = useState(false);
 
-  const handleCompletedChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCompletedChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     e.stopPropagation();
-    setShowNameInput(true);
-    // The actual update will happen after the name is provided
+    if (!editorName.trim()) {
+      setShowNameInput(true);
+    } else {
+      setCards((prevCards) =>
+        prevCards.map((card) =>
+          card.id === id
+            ? {
+                ...card,
+                completed: !completed,
+                lastEditedBy: editorName.trim(),
+                lastEditedTime: Date.now(),
+                lastMovedTime,
+                isArchived,
+              }
+            : card
+        )
+      );
+    }
   };
-  const handleNameSubmit = (action: 'complete' | 'edit' | 'move', newValue?: boolean | string) => {
+  const handleNameSubmit = (
+    action: "complete" | "edit" | "move",
+    newValue?: boolean | string
+  ) => {
     if (!editorName.trim()) return;
 
     setCards((prevCards) =>
       prevCards.map((card) => {
         if (card.id !== id) return card;
-        
-        const updatedCard = { 
-          ...card, 
+
+        const updatedCard = {
+          ...card,
           lastEditedBy: editorName.trim(),
-          lastEditedTime: Date.now()
+          lastEditedTime: Date.now(),
         };
-        
+
         switch (action) {
-          case 'complete':
-            if (typeof newValue === 'boolean') {
+          case "complete":
+            if (typeof newValue === "boolean") {
               updatedCard.completed = newValue;
             }
             break;
-          case 'edit':
-            if (typeof newValue === 'string') {
+          case "edit":
+            if (typeof newValue === "string") {
               updatedCard.title = newValue;
             }
             break;
         }
-        
+
         return updatedCard;
       })
     );
 
-    setEditorName("");
     setShowNameInput(false);
-    if (action === 'edit') {
+    if (action === "edit") {
       setIsEditing(false);
     }
   };
 
-  const [dragStartColumn, setDragStartColumn] = useState<ColumnType | null>(null);
-
   const onDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     e.stopPropagation();
-    setDragStartColumn(column);
-    handleDragStart(e, { 
-      title, 
-      id, 
-      column, 
-      order, 
-      completed, 
-      createdBy, 
+    handleDragStart(e, {
+      title,
+      id,
+      column,
+      order,
+      completed,
+      createdBy,
       lastEditedBy,
-      lastEditedTime: Date.now()
+      lastEditedTime,
+      lastMovedTime,
+      isArchived,
     });
   };
-
-  // Check if card was moved to a different column
-  useEffect(() => {
-    if (dragStartColumn && dragStartColumn !== column) {
-      setDragStartColumn(null);
-      setShowNameInput(true);
-    }
-  }, [column, dragStartColumn]);
 
   return (
     <>
@@ -103,7 +118,7 @@ export const Card = ({
           draggable="true"
           onDragStart={onDragStart}
           className={`cursor-grab rounded border border-neutral-700 bg-neutral-800 p-3 active:cursor-grabbing transition-all duration-200 hover:bg-neutral-700 ${
-            isDragging ? 'opacity-50' : ''
+            isDragging ? "opacity-50" : ""
           }`}
         >
           <div className="flex justify-between items-start gap-2 relative">
@@ -127,16 +142,14 @@ export const Card = ({
                   <button
                     onClick={() => {
                       if (isEditing) {
-                        handleNameSubmit('edit', editedTitle.trim());
-                      } else if (dragStartColumn && dragStartColumn !== column) {
-                        handleNameSubmit('move');
+                        handleNameSubmit("edit", editedTitle.trim());
                       } else {
-                        handleNameSubmit('complete', !completed);
+                        handleNameSubmit("complete", !completed);
                       }
                     }}
                     className="text-xs text-neutral-100 bg-neutral-600 px-2 py-1 rounded"
                   >
-                    {isEditing ? 'Save' : dragStartColumn && dragStartColumn !== column ? 'Confirm Move' : 'Complete'}
+                    {isEditing ? "Save" : "Complete"}
                   </button>
                 </div>
               </div>
@@ -152,45 +165,91 @@ export const Card = ({
                 <div className="flex-1 pl-6">
                   {isEditing ? (
                     <textarea
-                      style={{ textDecoration: completed ? 'line-through' : 'none' }}
+                      style={{
+                        textDecoration: completed ? "line-through" : "none",
+                      }}
                       value={editedTitle}
                       onChange={(e) => setEditedTitle(e.target.value)}
                       onBlur={() => {
                         if (editedTitle.trim() !== title) {
-                          setShowNameInput(true);
+                          if (!editorName.trim()) {
+                            setShowNameInput(true);
+                          } else {
+                            setCards((prevCards) =>
+                              prevCards.map((card) =>
+                                card.id === id
+                                  ? {
+                                      ...card,
+                                      title: editedTitle.trim(),
+                                      lastEditedBy: editorName.trim(),
+                                      lastEditedTime: Date.now(),
+                                      lastMovedTime,
+                                      isArchived,
+                                    }
+                                  : card
+                              )
+                            );
+                            setIsEditing(false);
+                          }
                         } else {
                           setIsEditing(false);
                         }
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
+                        if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();
                           if (editedTitle.trim() !== title) {
-                            setShowNameInput(true);
+                            if (!editorName.trim()) {
+                              setShowNameInput(true);
+                            } else {
+                              setCards((prevCards) =>
+                                prevCards.map((card) =>
+                                  card.id === id
+                                    ? {
+                                        ...card,
+                                        title: editedTitle.trim(),
+                                        lastEditedBy: editorName.trim(),
+                                        lastEditedTime: Date.now(),
+                                        lastMovedTime,
+                                        isArchived,
+                                      }
+                                    : card
+                                )
+                              );
+                              setIsEditing(false);
+                            }
                           } else {
                             setIsEditing(false);
                           }
                         }
-                        if (e.key === 'Escape') {
+                        if (e.key === "Escape") {
                           setEditedTitle(title);
                           setIsEditing(false);
                         }
                       }}
                       className="w-full bg-neutral-700 text-sm text-neutral-100 p-1 rounded outline-none resize-none min-h-[1.5rem]"
                       autoFocus
-                      rows={editedTitle.split('\n').length}
+                      rows={editedTitle.split("\n").length}
                     />
                   ) : (
-                    <p 
+                    <p
                       className="text-sm text-neutral-100 whitespace-pre-wrap"
-                      style={{ textDecoration: completed ? 'line-through' : 'none' }}
-                    >{title}</p>
+                      style={{
+                        textDecoration: completed ? "line-through" : "none",
+                      }}
+                    >
+                      {title}
+                    </p>
                   )}
                   <div className="mt-2 text-xs text-neutral-400">
                     Created by {createdBy}
-                    {lastEditedBy !== createdBy && ` • Last edited by ${lastEditedBy}`}
+                    {lastEditedBy !== createdBy &&
+                      ` • Last edited by ${lastEditedBy}`}
                     <div className="text-neutral-500">
                       Last edited {new Date(lastEditedTime).toLocaleString()}
+                      {` • Last moved ${new Date(
+                        lastMovedTime
+                      ).toLocaleString()}`}
                     </div>
                   </div>
                 </div>

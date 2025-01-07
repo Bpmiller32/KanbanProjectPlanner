@@ -6,11 +6,12 @@ import { FiPlus } from "react-icons/fi";
 type AddCardProps = {
   column: ColumnType;
   setCards: Dispatch<SetStateAction<CardType[]>>;
+  editorName: string;
+  setEditorName: Dispatch<SetStateAction<string>>;
 };
 
-export const AddCard = ({ column, setCards }: AddCardProps) => {
+export const AddCard = ({ column, setCards, editorName, setEditorName }: AddCardProps) => {
   const [text, setText] = useState("");
-  const [name, setName] = useState("");
   const [adding, setAdding] = useState(false);
   const [showNameInput, setShowNameInput] = useState(false);
 
@@ -19,12 +20,10 @@ export const AddCard = ({ column, setCards }: AddCardProps) => {
 
     if (!text.trim().length) return;
     
-    if (!showNameInput) {
+    if (!editorName.trim()) {
       setShowNameInput(true);
       return;
     }
-
-    if (!name.trim().length) return;
 
     setCards((prevCards) => {
       // Find the highest order in the target column
@@ -38,9 +37,11 @@ export const AddCard = ({ column, setCards }: AddCardProps) => {
         id: Math.random().toString(),
         order: highestOrder + 1,
         completed: false,
-        createdBy: name.trim(),
-        lastEditedBy: name.trim(),
-        lastEditedTime: Date.now()
+        createdBy: editorName.trim(),
+        lastEditedBy: editorName.trim(),
+        lastEditedTime: Date.now(),
+        lastMovedTime: Date.now(),
+        isArchived: false
       };
 
       // Return a properly typed array of CardType
@@ -48,9 +49,7 @@ export const AddCard = ({ column, setCards }: AddCardProps) => {
     });
 
     setText("");
-    setName("");
     setAdding(false);
-    setShowNameInput(false);
   };
 
   return (
@@ -60,20 +59,20 @@ export const AddCard = ({ column, setCards }: AddCardProps) => {
           {showNameInput ? (
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={editorName}
+              onChange={(e) => setEditorName(e.target.value)}
               autoFocus
               placeholder="Enter your name..."
               className="w-full rounded border border-violet-400 bg-violet-400/20 p-3 text-sm text-neutral-50 placeholder-violet-300 focus:outline-0 mb-2"
             />
           ) : (
             <textarea
-            onChange={(e) => setText(e.target.value)}
-            value={text}
-            autoFocus
-            placeholder="Add new task..."
-            className="w-full rounded border border-violet-400 bg-violet-400/20 p-3 text-sm text-neutral-50 placeholder-violet-300 focus:outline-0"
-          />
+              onChange={(e) => setText(e.target.value)}
+              value={text}
+              autoFocus
+              placeholder="Add new task..."
+              className="w-full rounded border border-violet-400 bg-violet-400/20 p-3 text-sm text-neutral-50 placeholder-violet-300 focus:outline-0"
+            />
           )}
           <div className="mt-1.5 flex items-center justify-end gap-1.5">
             <button
@@ -81,13 +80,13 @@ export const AddCard = ({ column, setCards }: AddCardProps) => {
               onClick={() => setAdding(false)}
               className="px-3 py-1.5 text-xs text-neutral-400 transition-colors hover:text-neutral-50"
             >
-              {showNameInput ? "Back" : "Close"}
+              Close
             </button>
             <button
               type="submit"
               className="flex items-center gap-1.5 rounded bg-neutral-50 px-3 py-1.5 text-xs text-neutral-950 transition-colors hover:bg-neutral-300"
             >
-              <span>{showNameInput ? "Create Card" : "Next"}</span>
+              <span>Create Card</span>
               <FiPlus />
             </button>
           </div>

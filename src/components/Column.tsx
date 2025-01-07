@@ -11,6 +11,8 @@ interface ColumnProps {
   cards: CardType[];
   column: ColumnType;
   setCards: Dispatch<SetStateAction<CardType[]>>;
+  editorName: string;
+  setEditorName: Dispatch<SetStateAction<string>>;
 }
 
 export const Column: React.FC<ColumnProps> = ({
@@ -19,15 +21,11 @@ export const Column: React.FC<ColumnProps> = ({
   cards,
   column,
   setCards,
+  editorName,
+  setEditorName,
 }: ColumnProps) => {
   const [active, setActive] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [showNameInput, setShowNameInput] = useState(false);
-  const [editorName, setEditorName] = useState("");
-  const [pendingMove, setPendingMove] = useState<{
-    cardId: string;
-    beforeId: string;
-  } | null>(null);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, card: CardType) => {
     e.dataTransfer.setData("cardId", card.id);
@@ -96,48 +94,6 @@ export const Column: React.FC<ColumnProps> = ({
     return beforeCard.order + (afterCard.order - beforeCard.order) / 2;
   };
 
-  const handleNameSubmit = async () => {
-    if (!editorName.trim() || !pendingMove) return;
-
-    const { cardId, beforeId } = pendingMove;
-
-    // Get cards in the target column
-    const columnCards = cards
-      .filter(c => c.column === column)
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
-    
-    // Find surrounding cards for order calculation
-    const insertIndex = beforeId === "-1" ? columnCards.length : 
-      columnCards.findIndex(c => c.id === beforeId);
-    
-    const beforeCard = insertIndex > 0 ? columnCards[insertIndex - 1] : null;
-    const afterCard = insertIndex < columnCards.length ? columnCards[insertIndex] : null;
-    
-    // Calculate new order
-    const newOrder = calculateNewOrder(columnCards, beforeCard, afterCard);
-
-    // Create new cards array with updated card
-    const newCards = cards.map(c => 
-      c.id === cardId 
-        ? { 
-            ...c, 
-            column, 
-            order: newOrder,
-            lastEditedBy: editorName.trim(),
-            lastEditedTime: Date.now()
-          }
-        : c
-    );
-
-    // Let Firestore handle the update and UI refresh
-    await setCards(newCards);
-
-    // Reset state
-    setEditorName("");
-    setShowNameInput(false);
-    setPendingMove(null);
-  };
-
   const handleDragEnd = async (e: React.DragEvent<HTMLDivElement>) => {
     try {
       const cardId = e.dataTransfer.getData("cardId");
@@ -156,14 +112,31 @@ export const Column: React.FC<ColumnProps> = ({
         const cardToMove = cards.find((c) => c.id === cardId);
         if (!cardToMove) return;
 
-        // Store the pending move details
-        setPendingMove({
-          cardId,
-          beforeId: before
-        });
+        // Calculate and apply the move immediately
+        const columnCards = cards
+          .filter(c => c.column === column)
+          .sort((a, b) => (a.order || 0) - (b.order || 0));
+        
+        const insertIndex = before === "-1" ? columnCards.length : 
+          columnCards.findIndex(c => c.id === before);
+        
+        const beforeCard = insertIndex > 0 ? columnCards[insertIndex - 1] : null;
+        const afterCard = insertIndex < columnCards.length ? columnCards[insertIndex] : null;
+        
+        const newOrder = calculateNewOrder(columnCards, beforeCard, afterCard);
 
-        // Show name input
-        setShowNameInput(true);
+        setCards(prevCards =>
+          prevCards.map(c =>
+            c.id === cardId
+              ? {
+                  ...c,
+                  column,
+                  order: newOrder,
+                  lastMovedTime: Date.now()
+                }
+              : c
+          )
+        );
       }
     } catch (error) {
       console.error('Failed to update card position:', error);
@@ -221,52 +194,35 @@ export const Column: React.FC<ColumnProps> = ({
           {filteredCards.length}
         </span>
       </div>
-      {showNameInput ? (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-neutral-900/80">
-          <div className="w-72 p-4 bg-neutral-800 rounded-lg shadow-lg">
-            <input
-              type="text"
-              value={editorName}
-              onChange={(e) => setEditorName(e.target.value)}
-              placeholder="Enter your name..."
-              className="w-full bg-neutral-700 text-sm text-neutral-100 p-2 rounded outline-none mb-3"
-              autoFocus
-            />
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setShowNameInput(false);
-                  setPendingMove(null);
-                }}
-                className="px-3 py-1.5 text-xs text-neutral-400 hover:text-neutral-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleNameSubmit}
-                className="px-3 py-1.5 text-xs bg-violet-500 text-white rounded hover:bg-violet-600"
-              >
-                Confirm Move
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div
-          onDrop={handleDragEnd}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          className={`h-full w-full transition-colors column-drop-zone ${
-            active ? "bg-neutral-800/50" : "bg-neutral-800/0"
-          }`}
-        >
+      <div
+        onDrop={handleDragEnd}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        className={`h-full w-full transition-colors column-drop-zone ${
+          active ? "bg-neutral-800/50" : "bg-neutral-800/0"
+        }`}
+      >
         {filteredCards.map((c) => {
-          return <Card key={c.id} {...c} handleDragStart={handleDragStart} isDragging={isDragging} setCards={setCards} />;
+          return (
+            <Card 
+              key={c.id} 
+              {...c} 
+              handleDragStart={handleDragStart} 
+              isDragging={isDragging} 
+              setCards={setCards}
+              editorName={editorName}
+              setEditorName={setEditorName}
+            />
+          );
         })}
         <DropIndicator beforeId={null} column={column} />
-        <AddCard column={column} setCards={setCards} />
-        </div>
-      )}
+        <AddCard 
+          column={column} 
+          setCards={setCards}
+          editorName={editorName}
+          setEditorName={setEditorName}
+        />
+      </div>
     </div>
   );
 };

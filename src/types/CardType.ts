@@ -9,4 +9,6 @@ export interface CardType {
   createdBy: string;
   lastEditedBy: string;
   lastEditedTime: number; // Unix timestamp in milliseconds
+  lastMovedTime: number; // Unix timestamp in milliseconds
+  isArchived: boolean;
 }
