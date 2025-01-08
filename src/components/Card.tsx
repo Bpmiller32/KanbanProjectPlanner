@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { CardType } from "../types/CardType";
 import { DropIndicator } from "./DropIndicator";
+import { FiTrash } from "react-icons/fi";
 
 interface CardProps extends CardType {
   handleDragStart: (e: React.DragEvent<HTMLDivElement>, card: CardType) => void;
@@ -18,6 +19,7 @@ export const Card = ({
   order,
   completed,
   createdBy,
+  createdAt,
   lastEditedBy,
   lastEditedTime,
   lastMovedTime,
@@ -32,6 +34,21 @@ export const Card = ({
   const [editedTitle, setEditedTitle] = useState(title);
   const [showNameInput, setShowNameInput] = useState(false);
 
+  const handleArchive = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCards((prevCards) =>
+      prevCards.map((card) =>
+        card.id === id
+          ? {
+              ...card,
+              isArchived: true,
+              lastMovedTime: Date.now(),
+            }
+          : card
+      )
+    );
+  };
+
   const handleCompletedChange = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -45,6 +62,7 @@ export const Card = ({
             ? {
                 ...card,
                 completed: !completed,
+                createdAt,
                 lastEditedBy: editorName.trim(),
                 lastEditedTime: Date.now(),
                 lastMovedTime,
@@ -55,6 +73,7 @@ export const Card = ({
       );
     }
   };
+
   const handleNameSubmit = (
     action: "complete" | "edit" | "move",
     newValue?: boolean | string
@@ -67,6 +86,7 @@ export const Card = ({
 
         const updatedCard = {
           ...card,
+          createdAt,
           lastEditedBy: editorName.trim(),
           lastEditedTime: Date.now(),
         };
@@ -103,6 +123,7 @@ export const Card = ({
       order,
       completed,
       createdBy,
+      createdAt,
       lastEditedBy,
       lastEditedTime,
       lastMovedTime,
@@ -181,6 +202,7 @@ export const Card = ({
                                   ? {
                                       ...card,
                                       title: editedTitle.trim(),
+                                      createdAt,
                                       lastEditedBy: editorName.trim(),
                                       lastEditedTime: Date.now(),
                                       lastMovedTime,
@@ -208,6 +230,7 @@ export const Card = ({
                                     ? {
                                         ...card,
                                         title: editedTitle.trim(),
+                                        createdAt,
                                         lastEditedBy: editorName.trim(),
                                         lastEditedTime: Date.now(),
                                         lastMovedTime,
@@ -246,22 +269,34 @@ export const Card = ({
                     {lastEditedBy !== createdBy &&
                       ` • Last edited by ${lastEditedBy}`}
                     <div className="text-neutral-500">
-                      Last edited {new Date(lastEditedTime).toLocaleString()}
+                      {createdAt &&
+                        `Created ${new Date(createdAt).toLocaleString()}`}
+                      {` • Last edited ${new Date(
+                        lastEditedTime
+                      ).toLocaleString()}`}
                       {` • Last moved ${new Date(
                         lastMovedTime
                       ).toLocaleString()}`}
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsEditing(true);
-                  }}
-                  className="text-neutral-400 hover:text-neutral-100 transition-colors"
-                >
-                  ✎
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditing(true);
+                    }}
+                    className="text-neutral-400 hover:text-neutral-100 transition-colors"
+                  >
+                    ✎
+                  </button>
+                  <button
+                    onClick={handleArchive}
+                    className="text-neutral-400 hover:text-red-400 transition-colors"
+                  >
+                    <FiTrash />
+                  </button>
+                </div>
               </>
             )}
           </div>

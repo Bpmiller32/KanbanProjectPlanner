@@ -35,10 +35,13 @@ interface CalendarEvent {
   endTime?: string;
   isAllDay?: boolean;
   createdAt?: number;
+  createdBy?: string;
+  lastEditedBy?: string;
   lastUpdated?: number;
 }
 
 function generateCalendarData(date: Date): Month[] {
+  // ... [Previous generateCalendarData implementation remains the same]
   const months: Month[] = [];
   const currentDate = new Date();
 
@@ -135,6 +138,8 @@ export function Calendar() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
   const [showEventForm, setShowEventForm] = useState(false);
+  const [editorName, setEditorName] = useState("");
+  const [showNameInput, setShowNameInput] = useState(false);
   const [editingEvent, setEditingEvent] = useState<
     Partial<CalendarEvent> & { id?: string }
   >({
@@ -209,6 +214,9 @@ export function Calendar() {
           date,
           title: "unnamed event",
           createdAt: Date.now(),
+          createdBy: "Anonymous",
+          lastEditedBy: "Anonymous",
+          lastUpdated: Date.now(),
         });
       }
     } catch (error) {
@@ -220,11 +228,17 @@ export function Calendar() {
     e.preventDefault();
     if (!editingEvent.title || !editingEvent.date) return;
 
+    if (!editorName.trim()) {
+      setShowNameInput(true);
+      return;
+    }
+
     try {
       const eventsRef = collection(db, "events");
       const eventData = {
         ...editingEvent,
         lastUpdated: Date.now(),
+        lastEditedBy: editorName.trim(),
       };
 
       if (isEditing && editingEvent.id) {
@@ -232,7 +246,11 @@ export function Calendar() {
         await setDoc(doc(eventsRef, editingEvent.id), eventData);
       } else {
         // Add new event
-        await setDoc(doc(eventsRef), eventData);
+        await setDoc(doc(eventsRef), {
+          ...eventData,
+          createdAt: Date.now(),
+          createdBy: editorName.trim(),
+        });
       }
 
       setShowEventForm(false);
@@ -299,7 +317,7 @@ export function Calendar() {
               "text-center"
             )}
           >
-            <h2 className="text-sm font-semibold text-gray-200">
+            <h2 className="text-sm font-semibold text-gray-900">
               {`${month.name} ${new Date(
                 currentDate.getFullYear(),
                 currentDate.getMonth() + monthIdx
@@ -337,28 +355,34 @@ export function Calendar() {
                     "relative py-1.5 hover:bg-gray-100 focus:z-10"
                   )}
                 >
-                  <div className="flex flex-col items-center">
-                    <time
-                      dateTime={day.date}
-                      className={classNames(
-                        day.isToday && "bg-indigo-600 font-semibold text-white",
-                        "mx-auto flex size-7 items-center justify-center rounded-full"
-                      )}
-                    >
-                      {(day.date.split("-").pop() as string).replace(/^0/, "")}
-                    </time>
-                    {eventCounts[day.date] > 0 && (
-                      <div className="flex gap-0.5 mt-0.5">
-                        {[...Array(Math.min(eventCounts[day.date], 3))].map(
-                          (_, i) => (
-                            <div
-                              key={i}
-                              className="size-1 rounded-full bg-indigo-600"
-                            />
-                          )
+                  <div className="h-14 flex flex-col items-center justify-between py-1">
+                    <div className="flex-1 flex items-center">
+                      <time
+                        dateTime={day.date}
+                        className={classNames(
+                          day.isToday &&
+                            "bg-indigo-600 font-semibold text-white",
+                          "mx-auto flex size-7 items-center justify-center rounded-full"
                         )}
+                      >
+                        {(day.date.split("-").pop() as string).replace(
+                          /^0/,
+                          ""
+                        )}
+                      </time>
+                    </div>
+                    <div className="h-2 flex items-center">
+                      <div className="flex gap-0.5">
+                        {[
+                          ...Array(Math.min(eventCounts[day.date] || 0, 3)),
+                        ].map((_, i) => (
+                          <div
+                            key={i}
+                            className="size-1 rounded-full bg-indigo-600"
+                          />
+                        ))}
                       </div>
-                    )}
+                    </div>
                   </div>
                 </button>
               ))}
@@ -368,7 +392,7 @@ export function Calendar() {
       </div>
       <section className="mt-12">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-base font-semibold text-gray-200">
+          <h2 className="text-base font-semibold text-gray-900">
             Upcoming events
           </h2>
           <button
@@ -390,58 +414,77 @@ export function Calendar() {
             onSubmit={handleEventSubmit}
             className="mb-6 space-y-4 bg-gray-50 p-4 rounded-lg"
           >
-            <div>
-              <label
-                htmlFor="title"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Event title
-              </label>
-              <input
-                type="text"
-                id="title"
-                value={editingEvent.title}
-                onChange={(e) =>
-                  setEditingEvent(
-                    (prev: Partial<CalendarEvent> & { id?: string }) => ({
-                      ...prev,
-                      title: e.target.value,
-                    })
-                  )
-                }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                required
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="date"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Date
-              </label>
-              <input
-                type="date"
-                id="date"
-                value={editingEvent.date}
-                onChange={(e) =>
-                  setEditingEvent(
-                    (prev: Partial<CalendarEvent> & { id?: string }) => ({
-                      ...prev,
-                      date: e.target.value,
-                    })
-                  )
-                }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                required
-              />
-            </div>
+            {showNameInput ? (
+              <div>
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Enter your name...
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  value={editorName}
+                  onChange={(e) => setEditorName(e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  required
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label
+                    htmlFor="title"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Event title
+                  </label>
+                  <input
+                    type="text"
+                    id="title"
+                    value={editingEvent.title}
+                    onChange={(e) =>
+                      setEditingEvent((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }))
+                    }
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="date"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    id="date"
+                    value={editingEvent.date}
+                    onChange={(e) =>
+                      setEditingEvent((prev) => ({
+                        ...prev,
+                        date: e.target.value,
+                      }))
+                    }
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    required
+                  />
+                </div>
+              </>
+            )}
             <div className="flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => {
                   setShowEventForm(false);
                   setIsEditing(false);
+                  setShowNameInput(false);
                   setEditingEvent({
                     date: new Date().toISOString().split("T")[0],
                     title: "",
@@ -455,7 +498,11 @@ export function Calendar() {
                 type="submit"
                 className="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-500"
               >
-                {isEditing ? "Update event" : "Add event"}
+                {showNameInput
+                  ? "Continue"
+                  : isEditing
+                  ? "Update event"
+                  : "Add event"}
               </button>
             </div>
           </form>
@@ -469,9 +516,16 @@ export function Calendar() {
                 <time dateTime={event.date} className="w-28 flex-none">
                   {formattedDate}
                 </time>
-                <p className="mt-2 flex-auto sm:mt-0 font-semibold text-gray-200">
-                  {event.title}
-                </p>
+                <div className="mt-2 flex-auto sm:mt-0">
+                  <p className="font-semibold text-gray-900">{event.title}</p>
+                  {event.title !== "unnamed event" && (
+                    <p className="text-xs text-gray-500">
+                      Created by {event.createdBy}
+                      {event.lastEditedBy !== event.createdBy &&
+                        ` • Last edited by ${event.lastEditedBy}`}
+                    </p>
+                  )}
+                </div>
                 <div className="flex gap-2 ml-4">
                   <button
                     onClick={() => handleEditEvent(event)}

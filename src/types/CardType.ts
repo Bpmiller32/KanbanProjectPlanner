@@ -7,6 +7,7 @@ export interface CardType {
   order: number;
   completed?: boolean;
   createdBy: string;
+  createdAt: number; // Unix timestamp in milliseconds
   lastEditedBy: string;
   lastEditedTime: number; // Unix timestamp in milliseconds
   lastMovedTime: number; // Unix timestamp in milliseconds
