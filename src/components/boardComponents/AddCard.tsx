@@ -1,6 +1,6 @@
 import { Dispatch, FormEvent, SetStateAction, useState } from "react";
-import { ColumnType } from "../types/ColumnType";
-import { CardType } from "../types/CardType";
+import { ColumnType } from "../../types/ColumnType";
+import { CardType } from "../../types/CardType";
 import { FiPlus } from "react-icons/fi";
 
 type AddCardProps = {
@@ -10,7 +10,12 @@ type AddCardProps = {
   setEditorName: Dispatch<SetStateAction<string>>;
 };
 
-export const AddCard = ({ column, setCards, editorName, setEditorName }: AddCardProps) => {
+export const AddCard = ({
+  column,
+  setCards,
+  editorName,
+  setEditorName,
+}: AddCardProps) => {
   const [text, setText] = useState("");
   const [adding, setAdding] = useState(false);
   const [showNameInput, setShowNameInput] = useState(false);
@@ -42,9 +47,11 @@ export const AddCard = ({ column, setCards, editorName, setEditorName }: AddCard
   const createCard = () => {
     setCards((prevCards) => {
       // Find the highest order in the target column
-      const columnCards = prevCards.filter(card => card.column === column);
-      const highestOrder = columnCards.reduce((max, card) => 
-        Math.max(max, card.order || 0), -1);
+      const columnCards = prevCards.filter((card) => card.column === column);
+      const highestOrder = columnCards.reduce(
+        (max, card) => Math.max(max, card.order || 0),
+        -1
+      );
 
       const newCard: CardType = {
         column,
@@ -57,7 +64,7 @@ export const AddCard = ({ column, setCards, editorName, setEditorName }: AddCard
         lastEditedBy: editorName.trim(),
         lastEditedTime: Date.now(),
         lastMovedTime: Date.now(),
-        isArchived: false
+        isArchived: false,
       };
 
       return [...prevCards, newCard] as CardType[];
@@ -82,7 +89,10 @@ export const AddCard = ({ column, setCards, editorName, setEditorName }: AddCard
   return (
     <>
       {adding ? (
-        <form onSubmit={handleSubmit} className="opacity-100 transition-opacity duration-200">
+        <form
+          onSubmit={handleSubmit}
+          className="opacity-100 transition-opacity duration-200"
+        >
           {showNameInput ? (
             <div>
               <textarea

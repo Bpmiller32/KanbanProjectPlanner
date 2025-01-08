@@ -1,6 +1,6 @@
 import React, { Dispatch, SetStateAction, useState } from "react";
-import { CardType } from "../types/CardType";
-import { ColumnType } from "../types/ColumnType";
+import { CardType } from "../../types/CardType";
+import { ColumnType } from "../../types/ColumnType";
 import { Card } from "./Card";
 import { DropIndicator } from "./DropIndicator";
 import { AddCard } from "./AddCard";
@@ -27,7 +27,10 @@ export const Column: React.FC<ColumnProps> = ({
   const [active, setActive] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, card: CardType) => {
+  const handleDragStart = (
+    e: React.DragEvent<HTMLDivElement>,
+    card: CardType
+  ) => {
     e.dataTransfer.setData("cardId", card.id);
     setIsDragging(true);
   };
@@ -35,7 +38,7 @@ export const Column: React.FC<ColumnProps> = ({
   const clearHighlights = (els?: HTMLElement[]) => {
     const indicators = els || getIndicators();
     indicators.forEach((indicator) => {
-      const line = indicator.querySelector('[data-indicator-line]');
+      const line = indicator.querySelector("[data-indicator-line]");
       if (line instanceof HTMLElement) {
         line.style.opacity = "0";
       }
@@ -44,9 +47,9 @@ export const Column: React.FC<ColumnProps> = ({
 
   // Reset active state for all columns
   const resetAllColumns = () => {
-    document.querySelectorAll('.column-drop-zone').forEach(zone => {
-      (zone as HTMLElement).classList.remove('bg-neutral-800/50');
-      (zone as HTMLElement).classList.add('bg-neutral-800/0');
+    document.querySelectorAll(".column-drop-zone").forEach((zone) => {
+      (zone as HTMLElement).classList.remove("bg-neutral-800/50");
+      (zone as HTMLElement).classList.add("bg-neutral-800/0");
     });
   };
 
@@ -58,7 +61,10 @@ export const Column: React.FC<ColumnProps> = ({
     );
   };
 
-  const getNearestIndicator = (e: React.DragEvent<HTMLDivElement>, indicators: HTMLElement[]) => {
+  const getNearestIndicator = (
+    e: React.DragEvent<HTMLDivElement>,
+    indicators: HTMLElement[]
+  ) => {
     // Get the cursor position relative to the container
     const mouseY = e.clientY;
 
@@ -79,7 +85,7 @@ export const Column: React.FC<ColumnProps> = ({
 
     return {
       element: closestIndicator,
-      offset: mouseY - closestIndicator.getBoundingClientRect().top
+      offset: mouseY - closestIndicator.getBoundingClientRect().top,
     };
   };
 
@@ -114,32 +120,36 @@ export const Column: React.FC<ColumnProps> = ({
 
         // Calculate and apply the move immediately
         const columnCards = cards
-          .filter(c => c.column === column)
+          .filter((c) => c.column === column)
           .sort((a, b) => (a.order || 0) - (b.order || 0));
-        
-        const insertIndex = before === "-1" ? columnCards.length : 
-          columnCards.findIndex(c => c.id === before);
-        
-        const beforeCard = insertIndex > 0 ? columnCards[insertIndex - 1] : null;
-        const afterCard = insertIndex < columnCards.length ? columnCards[insertIndex] : null;
-        
+
+        const insertIndex =
+          before === "-1"
+            ? columnCards.length
+            : columnCards.findIndex((c) => c.id === before);
+
+        const beforeCard =
+          insertIndex > 0 ? columnCards[insertIndex - 1] : null;
+        const afterCard =
+          insertIndex < columnCards.length ? columnCards[insertIndex] : null;
+
         const newOrder = calculateNewOrder(columnCards, beforeCard, afterCard);
 
-        setCards(prevCards =>
-          prevCards.map(c =>
+        setCards((prevCards) =>
+          prevCards.map((c) =>
             c.id === cardId
               ? {
                   ...c,
                   column,
                   order: newOrder,
-                  lastMovedTime: Date.now()
+                  lastMovedTime: Date.now(),
                 }
               : c
           )
         );
       }
     } catch (error) {
-      console.error('Failed to update card position:', error);
+      console.error("Failed to update card position:", error);
     }
   };
 
@@ -153,7 +163,7 @@ export const Column: React.FC<ColumnProps> = ({
     const indicators = getIndicators();
     clearHighlights(indicators);
     const el = getNearestIndicator(e, indicators);
-    const line = el.element.querySelector('[data-indicator-line]');
+    const line = el.element.querySelector("[data-indicator-line]");
     if (line instanceof HTMLElement) {
       line.style.opacity = "1";
     }
@@ -173,12 +183,12 @@ export const Column: React.FC<ColumnProps> = ({
       resetAllColumns();
     };
 
-    window.addEventListener('dragend', handleDragEnd);
-    window.addEventListener('mouseleave', handleDragEnd);
+    window.addEventListener("dragend", handleDragEnd);
+    window.addEventListener("mouseleave", handleDragEnd);
 
     return () => {
-      window.removeEventListener('dragend', handleDragEnd);
-      window.removeEventListener('mouseleave', handleDragEnd);
+      window.removeEventListener("dragend", handleDragEnd);
+      window.removeEventListener("mouseleave", handleDragEnd);
     };
   }, []);
 
@@ -204,11 +214,11 @@ export const Column: React.FC<ColumnProps> = ({
       >
         {filteredCards.map((c) => {
           return (
-            <Card 
-              key={c.id} 
-              {...c} 
-              handleDragStart={handleDragStart} 
-              isDragging={isDragging} 
+            <Card
+              key={c.id}
+              {...c}
+              handleDragStart={handleDragStart}
+              isDragging={isDragging}
               setCards={setCards}
               editorName={editorName}
               setEditorName={setEditorName}
@@ -216,8 +226,8 @@ export const Column: React.FC<ColumnProps> = ({
           );
         })}
         <DropIndicator beforeId={null} column={column} />
-        <AddCard 
-          column={column} 
+        <AddCard
+          column={column}
           setCards={setCards}
           editorName={editorName}
           setEditorName={setEditorName}

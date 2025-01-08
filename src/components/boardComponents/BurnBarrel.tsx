@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction, useState, DragEvent } from "react";
 import { FaFire } from "react-icons/fa";
-import { CardType } from "../types/CardType";
+import { CardType } from "../../types/CardType";
 import { FiTrash } from "react-icons/fi";
 
 export const BurnBarrel = ({
@@ -22,13 +22,13 @@ export const BurnBarrel = ({
   const handleDragEnd = (e: DragEvent) => {
     const cardId = e.dataTransfer.getData("cardId");
 
-    setCards((prevCards) => 
+    setCards((prevCards) =>
       prevCards.map((card) =>
         card.id === cardId
           ? {
               ...card,
               isArchived: true,
-              lastMovedTime: Date.now()
+              lastMovedTime: Date.now(),
             }
           : card
       )

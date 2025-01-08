@@ -1,15 +1,15 @@
 import { ColumnType } from "./ColumnType";
 
 export interface CardType {
-  title: string;
   id: string;
+  title: string;
   column: ColumnType;
   order: number;
   completed?: boolean;
   createdBy: string;
-  createdAt: number; // Unix timestamp in milliseconds
+  createdAt: number;
   lastEditedBy: string;
-  lastEditedTime: number; // Unix timestamp in milliseconds
-  lastMovedTime: number; // Unix timestamp in milliseconds
+  lastEditedTime: number;
+  lastMovedTime: number;
   isArchived: boolean;
 }

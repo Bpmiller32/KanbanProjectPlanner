@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { CardType } from "../types/CardType";
+import { CardType } from "../../types/CardType";
 import { DropIndicator } from "./DropIndicator";
 import { FiTrash } from "react-icons/fi";
 
@@ -185,17 +185,20 @@ export const Card = ({
                 />
                 <div className="flex-1 pl-6">
                   {isEditing ? (
-                    <textarea
-                      style={{
-                        textDecoration: completed ? "line-through" : "none",
-                      }}
-                      value={editedTitle}
-                      onChange={(e) => setEditedTitle(e.target.value)}
-                      onBlur={() => {
-                        if (editedTitle.trim() !== title) {
-                          if (!editorName.trim()) {
-                            setShowNameInput(true);
-                          } else {
+                    <div>
+                      <textarea
+                        style={{
+                          textDecoration: completed ? "line-through" : "none",
+                        }}
+                        value={editedTitle}
+                        onChange={(e) => setEditedTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            if (!editorName.trim()) {
+                              setShowNameInput(true);
+                              return;
+                            }
                             setCards((prevCards) =>
                               prevCards.map((card) =>
                                 card.id === id
@@ -212,48 +215,54 @@ export const Card = ({
                               )
                             );
                             setIsEditing(false);
-                          }
-                        } else {
-                          setIsEditing(false);
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          if (editedTitle.trim() !== title) {
-                            if (!editorName.trim()) {
-                              setShowNameInput(true);
-                            } else {
-                              setCards((prevCards) =>
-                                prevCards.map((card) =>
-                                  card.id === id
-                                    ? {
-                                        ...card,
-                                        title: editedTitle.trim(),
-                                        createdAt,
-                                        lastEditedBy: editorName.trim(),
-                                        lastEditedTime: Date.now(),
-                                        lastMovedTime,
-                                        isArchived,
-                                      }
-                                    : card
-                                )
-                              );
-                              setIsEditing(false);
-                            }
-                          } else {
+                          } else if (e.key === "Escape") {
+                            setEditedTitle(title);
                             setIsEditing(false);
                           }
-                        }
-                        if (e.key === "Escape") {
-                          setEditedTitle(title);
-                          setIsEditing(false);
-                        }
-                      }}
-                      className="w-full bg-neutral-700 text-sm text-neutral-100 p-1 rounded outline-none resize-none min-h-[1.5rem]"
-                      autoFocus
-                      rows={editedTitle.split("\n").length}
-                    />
+                        }}
+                        className="w-full bg-neutral-700 text-sm text-neutral-100 p-1 rounded outline-none resize-none min-h-[1.5rem] mb-2"
+                        autoFocus
+                        rows={editedTitle.split("\n").length}
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setEditedTitle(title);
+                            setIsEditing(false);
+                          }}
+                          className="text-xs text-neutral-400 hover:text-neutral-100"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (!editorName.trim()) {
+                              setShowNameInput(true);
+                              return;
+                            }
+                            setCards((prevCards) =>
+                              prevCards.map((card) =>
+                                card.id === id
+                                  ? {
+                                      ...card,
+                                      title: editedTitle.trim(),
+                                      createdAt,
+                                      lastEditedBy: editorName.trim(),
+                                      lastEditedTime: Date.now(),
+                                      lastMovedTime,
+                                      isArchived,
+                                    }
+                                  : card
+                              )
+                            );
+                            setIsEditing(false);
+                          }}
+                          className="text-xs text-neutral-100 bg-neutral-600 px-2 py-1 rounded"
+                        >
+                          Save changes
+                        </button>
+                      </div>
+                    </div>
                   ) : (
                     <p
                       className="text-sm text-neutral-100 whitespace-pre-wrap"

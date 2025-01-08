@@ -1,7 +1,7 @@
 import { useEffect, useState, Dispatch, SetStateAction } from "react";
 import { CardType } from "../types/CardType";
-import { Column } from "./Column";
-import { BurnBarrel } from "./BurnBarrel";
+import { Column } from "./boardComponents/Column";
+import { BurnBarrel } from "./boardComponents/BurnBarrel";
 import { db } from "../firebase/config";
 import { collection, onSnapshot, doc, setDoc } from "firebase/firestore";
 
