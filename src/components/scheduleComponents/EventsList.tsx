@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { collection, doc, setDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { CalendarEvent } from "../../types/CalendarEvent";
 import { Utils } from "../Utils";
@@ -35,15 +35,25 @@ export const EventsList = ({ events }: EventsProps) => {
       // Reference to the "events" collection in Firestore
       const eventsRef = collection(db, "events");
 
-      // Update the specified event document in Firestore
-      await setDoc(
-        doc(eventsRef, eventId), // Reference the event document by its ID
-        {
-          isArchived: true, // Mark the event as archived
-          lastUpdated: Date.now(), // Set the current timestamp as the last updated time
-        },
-        { merge: true } // Merge the new fields with the existing document instead of overwriting it
-      );
+      // Fetch the document to get the event data
+      const eventDoc = await getDoc(doc(eventsRef, eventId));
+      if (!eventDoc.exists()) {
+        throw new Error("document doesn't exist in Firebase");
+      }
+
+      // Check the title and decide to delete or archive, delete the event if the title is "unnamed event"
+      if (eventDoc.data().title === "unnamed event") {
+        await deleteDoc(doc(eventsRef, eventId));
+      } else {
+        await setDoc(
+          doc(eventsRef, eventId),
+          {
+            isArchived: true,
+            lastUpdated: Date.now(),
+          },
+          { merge: true } // Merge the new fields with the existing document instead of overwriting it
+        );
+      }
     } catch (error) {
       console.error("Error archiving event:", error);
     }
@@ -114,7 +124,7 @@ export const EventsList = ({ events }: EventsProps) => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-base font-semibold text-gray-100"
+          className="text-base font-semibold text-gray-100 cursor-default select-none"
         >
           Events List
         </motion.h2>
@@ -160,18 +170,23 @@ export const EventsList = ({ events }: EventsProps) => {
               className="py-4 sm:flex items-center"
             >
               {/* Date of the event */}
-              <time dateTime={event.date} className="w-28 flex-none">
+              <time
+                dateTime={event.date}
+                className="flex justify-center w-full sm:w-28 sm:block"
+              >
                 {Utils.formatEventDate(event.date)}
               </time>
 
               {/* Event details */}
               <div className="mt-2 flex-auto sm:mt-0">
                 {/* Event title */}
-                <p className="font-semibold text-gray-100">{event.title}</p>
+                <p className="font-semibold text-gray-100 flex justify-center w-full sm:block">
+                  {event.title}
+                </p>
 
                 {/* Additional information about the event, shown only if the title is not "unnamed event" */}
                 {event.title !== "unnamed event" && (
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-400 flex justify-center w-full sm:block">
                     Created by {event.createdBy}
                     {/* Show "Last edited by" only if the editor is different from the creator */}
                     {event.lastEditedBy !== event.createdBy &&
@@ -181,8 +196,7 @@ export const EventsList = ({ events }: EventsProps) => {
               </div>
 
               {/* Action buttons for editing or archiving the event */}
-              <div className="flex gap-2 ml-4"></div>
-              <div className="flex gap-2 ml-4">
+              <div className="flex gap-2 py-2 justify-center mt-2 sm:mt-0">
                 <Button
                   text="Edit"
                   onClick={() => handleEditButtonClicked(event)}
