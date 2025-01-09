@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { db } from "../firebase/config";
+import { db } from "../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { CalendarEvent } from "../types/CalendarEvent";
 import { EventsList } from "./scheduleComponents/EventsList";
@@ -20,25 +20,32 @@ export const Schedule = () => {
       const eventsData = snapshot.docs
         .map((doc) => ({
           id: doc.id, // Include the document ID as part of the event data.
+          date: doc.data().date || '', // Default date to empty string if undefined
+          startTime: doc.data().startTime || '', // Default startTime to empty string if undefined
           ...doc.data(), // Spread the rest of the document data.
           isArchived: doc.data().isArchived || false, // Default "isArchived" to false if it's undefined.
         }))
         .filter((event) => !event.isArchived) as CalendarEvent[];
 
-      // Sort events by date (primary) and start time (secondary).
+      // Sort events by date (primary) and start time (secondary), with null checks
       eventsData.sort((a, b) => {
-        // Compare dates lexicographically, if dates differ, sort by date.
+        // Ensure dates exist before comparing
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+
+        // Compare dates lexicographically
         const dateCompare = a.date.localeCompare(b.date);
         if (dateCompare !== 0) {
           return dateCompare;
         }
 
-        // Handle missing start times.
-        if (!a.startTime || !b.startTime) {
-          return 0;
-        }
+        // Handle missing start times
+        if (!a.startTime && !b.startTime) return 0;
+        if (!a.startTime) return 1;
+        if (!b.startTime) return -1;
 
-        // Sort by start time if dates are equal.
+        // Sort by start time if dates are equal
         return a.startTime.localeCompare(b.startTime);
       });
 
@@ -48,7 +55,9 @@ export const Schedule = () => {
       // Calculate the number of events per date.
       const counts: { [key: string]: number } = {};
       eventsData.forEach((event) => {
-        counts[event.date] = (counts[event.date] || 0) + 1;
+        if (event.date) {
+          counts[event.date] = (counts[event.date] || 0) + 1;
+        }
       });
 
       // Update the eventsCount state with calculated event counts.

@@ -1,9 +1,10 @@
 import { useEffect, useState, SetStateAction } from "react";
 import { CardType } from "../types/CardType";
 import { Column } from "./boardComponents/Column";
-import { db } from "../firebase/config";
+import { db } from "../firebase";
 import { collection, onSnapshot, doc, setDoc } from "firebase/firestore";
 import { ColumnType } from "../types/ColumnType";
+import { motion } from "framer-motion";
 
 export const Board = () => {
   // State to store current list of cards, name of the current editor
@@ -127,19 +128,26 @@ export const Board = () => {
 
   /* ----------------------------- Render function ---------------------------- */
   return (
-    <div className="flex justify-center h-full w-full gap-3 px-6">
-      {boardColumns.map(({ title, column, color }) => (
-        <Column
-          key={column}
-          title={title}
-          column={column}
-          headingColor={color}
-          cards={cards}
-          setCards={handleSetCards}
-          editorName={editorName}
-          setEditorName={setEditorName}
-        />
-      ))}
-    </div>
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="w-full overflow-x-auto pb-32"
+    >
+      <div className="flex justify-start sm:justify-center gap-3 px-6 min-w-max">
+        {boardColumns.map(({ title, column, color }) => (
+          <Column
+            key={column}
+            title={title}
+            column={column}
+            headingColor={color}
+            cards={cards}
+            setCards={handleSetCards}
+            editorName={editorName}
+            setEditorName={setEditorName}
+          />
+        ))}
+      </div>
+    </motion.div>
   );
 };

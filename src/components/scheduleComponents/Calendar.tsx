@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { db } from "../../firebase/config";
+import { db } from "../../firebase";
 import {
   collection,
   doc,
@@ -158,7 +158,7 @@ export const Calendar = ({ eventCounts }: CalendarProps) => {
           {/* Days Grid */}
           <motion.div
             key={`days-grid-${month.name}-${month.year}`}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="mt-2 grid grid-cols-7 gap-px bg-gray-200 text-sm rounded-lg"

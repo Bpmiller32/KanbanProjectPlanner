@@ -96,18 +96,43 @@ export class Utils {
   }
 
   // Method to format a date string into a readable format
-  public static formatEventDate(dateStr: string): string {
-    // Split the input date string (YYYY-MM-DD) into components
-    const [year, month, day] = dateStr.split("-").map(Number);
+  public static formatEventDate(dateStr: string | undefined): string {
+    try {
+      // Return empty string if date is undefined or empty
+      if (!dateStr) {
+        return '';
+      }
 
-    // Create a new Date object using the components. `month - 1` because JavaScript months are zero-indexed (0 = January, 11 = December)
-    const date = new Date(year, month - 1, day);
+      // Split the input date string (YYYY-MM-DD) into components
+      const parts = dateStr.split("-");
+      if (parts.length !== 3) {
+        return '';
+      }
 
-    // Format the date as a readable string
-    return date.toLocaleDateString("en-US", {
-      weekday: "short", // Short name for the weekday (e.g., "Mon")
-      month: "short", // Short name for the month (e.g., "Jan")
-      day: "numeric", // Numeric day (e.g., "1", "15")
-    });
+      const [year, month, day] = parts.map(Number);
+      
+      // Validate date components
+      if (isNaN(year) || isNaN(month) || isNaN(day)) {
+        return '';
+      }
+
+      // Create a new Date object using the components
+      const date = new Date(year, month - 1, day);
+
+      // Validate the date is valid
+      if (isNaN(date.getTime())) {
+        return '';
+      }
+
+      // Format the date as a readable string
+      return date.toLocaleDateString("en-US", {
+        weekday: "short", // Short name for the weekday (e.g., "Mon")
+        month: "short", // Short name for the month (e.g., "Jan")
+        day: "numeric", // Numeric day (e.g., "1", "15")
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return '';
+    }
   }
 }

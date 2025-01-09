@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { collection, deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "../../firebase/config";
+import { db } from "../../firebase";
 import { CalendarEvent } from "../../types/CalendarEvent";
 import { Utils } from "../Utils";
 import { EventForm } from "./EventForm";
@@ -121,7 +121,7 @@ export const EventsList = ({ events }: EventsProps) => {
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <motion.h2
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="text-base font-semibold text-gray-100 cursor-default select-none"
@@ -129,7 +129,7 @@ export const EventsList = ({ events }: EventsProps) => {
           Events List
         </motion.h2>
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
@@ -160,69 +160,82 @@ export const EventsList = ({ events }: EventsProps) => {
       )}
 
       {/* Events List */}
-      <ol className="mt-2 text-sm/6 text-gray-400">
-        {events.map((event, index) => (
-          <AnimatePresence key={event.id}>
-            <motion.li
-              initial={{ opacity: 0, y: -10 }} // Fade in and slide up
-              animate={{ opacity: 1, y: 0 }} // Fully visible
-              transition={{ duration: 0.5 }}
-              className="py-4 sm:flex items-center"
-            >
-              {/* Date of the event */}
-              <time
-                dateTime={event.date}
-                className="flex justify-center w-full sm:w-28 sm:block"
+      <ol className="mt-2 text-sm/6 text-gray-400 max-h-[275px] min-h-[275px] overflow-y-auto">
+        {events.length === 0 ? (
+          <motion.li
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center justify-center h-full text-gray-500"
+          >
+            No events yet. Click "Add event" or a date in the calendar to create
+            one.
+          </motion.li>
+        ) : (
+          events.map((event, index) => (
+            <AnimatePresence key={event.id}>
+              <motion.li
+                initial={{ opacity: 0, y: -10 }} // Fade in and slide up
+                animate={{ opacity: 1, y: 0 }} // Fully visible
+                transition={{ duration: 0.5 }}
+                className="py-4 sm:flex items-center"
               >
-                {Utils.formatEventDate(event.date)}
-              </time>
+                {/* Date of the event */}
+                <time
+                  dateTime={event.date}
+                  className="flex justify-center w-full sm:w-28 sm:block"
+                >
+                  {Utils.formatEventDate(event.date)}
+                </time>
 
-              {/* Event details */}
-              <div className="mt-2 flex-auto sm:mt-0">
-                {/* Event title */}
-                <p className="font-semibold text-gray-100 flex justify-center w-full sm:block">
-                  {event.title}
-                </p>
-
-                {/* Additional information about the event, shown only if the title is not "unnamed event" */}
-                {event.title !== "unnamed event" && (
-                  <p className="text-xs text-gray-400 flex justify-center w-full sm:block">
-                    {event.lastEditedBy && event.lastEditedBy !== event.createdBy
-                      ? `Last edited by ${event.lastEditedBy}`
-                      : `Created by ${event.createdBy}`}
+                {/* Event details */}
+                <div className="mt-2 flex-auto sm:mt-0">
+                  {/* Event title */}
+                  <p className="font-semibold text-gray-100 flex justify-center w-full sm:block">
+                    {event.title}
                   </p>
-                )}
-              </div>
 
-              {/* Action buttons for editing or archiving the event */}
-              <div className="flex gap-2 py-2 justify-center mt-2 sm:mt-0">
-                <Button
-                  text="Edit"
-                  onClick={() => handleEditButtonClicked(event)}
-                />
-                <Button
-                  text="Archive"
-                  onClick={() => handleArchiveButtonClicked(event.id)}
-                  bgColor="red"
-                />
-              </div>
-            </motion.li>
+                  {/* Additional information about the event, shown only if the title is not "unnamed event" */}
+                  {event.title !== "unnamed event" && (
+                    <p className="text-xs text-gray-400 flex justify-center w-full sm:block">
+                      {event.lastEditedBy &&
+                      event.lastEditedBy !== event.createdBy
+                        ? `Last edited by ${event.lastEditedBy}`
+                        : `Created by ${event.createdBy}`}
+                    </p>
+                  )}
+                </div>
 
-            {/* Dividing bar between events */}
-            {index < events.length - 1 && (
-              <motion.div
-                key={`divider-${event.id}`}
-                initial={{ scaleX: 0, opacity: 0 }} // Start hidden
-                animate={{ scaleX: 1, opacity: 1 }} // Grow and fade in
-                transition={{
-                  duration: 0.5, // Adjust duration as needed
-                  ease: "easeInOut",
-                }}
-                className="h-[1px] bg-gray-200 origin-center"
-              />
-            )}
-          </AnimatePresence>
-        ))}
+                {/* Action buttons for editing or archiving the event */}
+                <div className="flex gap-2 py-2 justify-center mt-2 sm:mt-0">
+                  <Button
+                    text="Edit"
+                    onClick={() => handleEditButtonClicked(event)}
+                  />
+                  <Button
+                    text="Archive"
+                    onClick={() => handleArchiveButtonClicked(event.id)}
+                    bgColor="red"
+                  />
+                </div>
+              </motion.li>
+
+              {/* Dividing bar between events */}
+              {index < events.length - 1 && (
+                <motion.div
+                  key={`divider-${event.id}`}
+                  initial={{ scaleX: 0, opacity: 0 }} // Start hidden
+                  animate={{ scaleX: 1, opacity: 1 }} // Grow and fade in
+                  transition={{
+                    duration: 0.5, // Adjust duration as needed
+                    ease: "easeInOut",
+                  }}
+                  className="h-[1px] bg-gray-200 origin-center"
+                />
+              )}
+            </AnimatePresence>
+          ))
+        )}
       </ol>
     </section>
   );

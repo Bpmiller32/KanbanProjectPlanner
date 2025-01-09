@@ -5,6 +5,7 @@ export default {
     extend: {
       screens: {
         tablet: "1000px",
+        appMax: "2000px",
       },
     },
   },

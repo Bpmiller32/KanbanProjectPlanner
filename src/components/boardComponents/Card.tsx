@@ -139,13 +139,20 @@ export const Card = ({
   };
 
   return (
-    <motion.div layout layoutId={id} className="mb-2">
+    <motion.div
+      layout
+      layoutId={id}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="mb-2"
+    >
       <div
         draggable="true"
         onDragStart={onDragStart}
-        className={`cursor-grab rounded border bg-neutral-800 p-3 ${
+        className={`cursor-grab rounded border border-gray-100 bg-neutral-800 p-3 ${
           isDragging ? "opacity-50" : ""
-        } transition-all duration-250 hover:bg-neutral-700`}
+        } transition-all duration-250 hover:bg-neutral-700 select-none`}
       >
         <div className="flex justify-between items-start gap-2 relative">
           {showNameInput ? (
@@ -176,7 +183,7 @@ export const Card = ({
               />
 
               {/* Main content */}
-              <div className="flex-1 pl-6">
+              <div className="pl-6 min-w-0">
                 {/* // If not in edit mode, display the card's title and metadata */}
                 <p
                   className="text-sm text-gray-100 whitespace-pre-wrap"
@@ -186,7 +193,7 @@ export const Card = ({
                 >
                   {title}
                 </p>
-                <div className="mt-2 text-xs text-gray-400">
+                <div className="mt-2 text-xs text-gray-400 truncate">
                   {/* Display last edited by or created by information */}
                   {lastEditedBy && lastEditedBy !== createdBy
                     ? `Edited by ${lastEditedBy}`
