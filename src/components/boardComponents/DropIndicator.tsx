@@ -1,14 +1,20 @@
-type DropIndicatorProps = {
+interface DropIndicatorProps {
   beforeId: string | null;
   column: string;
-};
+}
 
 export const DropIndicator = ({ beforeId, column }: DropIndicatorProps) => {
+  /* ----------------------------- Render function ---------------------------- */
   return (
     <div
-      data-before={beforeId || "-1"}
+      data-before={beforeId || ""}
       data-column={column}
-      className="relative h-2 my-2"
+      className="relative h-2"
+      data-type="drop-indicator"
+      style={{
+        marginTop: beforeId ? "0.5rem" : "0.25rem",
+        marginBottom: beforeId ? "0.5rem" : "0.25rem",
+      }}
     >
       <div className="absolute inset-x-0 h-2 flex items-center pointer-events-none">
         <div

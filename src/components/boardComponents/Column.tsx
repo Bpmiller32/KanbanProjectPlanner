@@ -1,6 +1,11 @@
-import React, { Dispatch, SetStateAction, useState } from "react";
+import React, {
+  Dispatch,
+  SetStateAction,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import { CardType } from "../../types/CardType";
-import { ColumnType } from "../../types/ColumnType";
 import { Card } from "./Card";
 import { DropIndicator } from "./DropIndicator";
 import { AddCard } from "./AddCard";
@@ -9,13 +14,13 @@ interface ColumnProps {
   title: string;
   headingColor: string;
   cards: CardType[];
-  column: ColumnType;
+  column: string;
   setCards: Dispatch<SetStateAction<CardType[]>>;
   editorName: string;
   setEditorName: Dispatch<SetStateAction<string>>;
 }
 
-export const Column: React.FC<ColumnProps> = ({
+export const Column = ({
   title,
   headingColor,
   cards,
@@ -24,58 +29,38 @@ export const Column: React.FC<ColumnProps> = ({
   editorName,
   setEditorName,
 }: ColumnProps) => {
+  // States to track whether the column is active (highlighted) during drag-over, weather a card is currently being dragged
   const [active, setActive] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleDragStart = (
-    e: React.DragEvent<HTMLDivElement>,
-    card: CardType
-  ) => {
-    e.dataTransfer.setData("cardId", card.id);
-    setIsDragging(true);
-  };
+  // Function to clear all DropIndicator highlights in this column
+  const clearHighlights = useCallback(() => {
+    document
+      .querySelectorAll(`[data-column="${column}"] [data-indicator-line]`)
+      .forEach((line) => {
+        // Hides the DropIndicator line
+        if (line instanceof HTMLElement) {
+          line.style.opacity = "0";
+        }
+      });
+  }, [column]);
 
-  const clearHighlights = (els?: HTMLElement[]) => {
-    const indicators = els || getIndicators();
-    indicators.forEach((indicator) => {
-      const line = indicator.querySelector("[data-indicator-line]");
-      if (line instanceof HTMLElement) {
-        line.style.opacity = "0";
-      }
-    });
-  };
-
-  // Reset active state for all columns
-  const resetAllColumns = () => {
-    document.querySelectorAll(".column-drop-zone").forEach((zone) => {
-      (zone as HTMLElement).classList.remove("bg-neutral-800/50");
-      (zone as HTMLElement).classList.add("bg-neutral-800/0");
-    });
-  };
-
-  const getIndicators = () => {
-    return Array.from(
-      document.querySelectorAll(
-        `[data-column="${column}"]`
-      ) as unknown as HTMLElement[]
-    );
-  };
-
+  // Finds the DropIndicator closest to the mouse cursor
   const getNearestIndicator = (
-    e: React.DragEvent<HTMLDivElement>,
-    indicators: HTMLElement[]
-  ) => {
-    // Get the cursor position relative to the container
-    const mouseY = e.clientY;
+    event: React.DragEvent<HTMLDivElement>
+  ): HTMLElement | null => {
+    // Select all DropIndicators in this column
+    const indicators = document.querySelectorAll<HTMLElement>(
+      `[data-column="${column}"][data-type="drop-indicator"]`
+    );
 
-    // Find the closest indicator by comparing the cursor position with the middle point of each gap
-    let closestIndicator = indicators[indicators.length - 1];
+    let closestIndicator: HTMLElement | null = null;
     let closestDistance = Number.POSITIVE_INFINITY;
 
-    indicators.forEach((indicator) => {
-      const box = indicator.getBoundingClientRect();
-      const centerY = box.top;
-      const distance = Math.abs(mouseY - centerY);
+    // Loop through each indicator and find the one closest to the cursor
+    indicators.forEach((indicator: HTMLElement) => {
+      const rect = indicator.getBoundingClientRect();
+      const distance = Math.abs(event.clientY - (rect.top + rect.height / 2));
 
       if (distance < closestDistance) {
         closestDistance = distance;
@@ -83,149 +68,181 @@ export const Column: React.FC<ColumnProps> = ({
       }
     });
 
-    return {
-      element: closestIndicator,
-      offset: mouseY - closestIndicator.getBoundingClientRect().top,
-    };
+    return closestIndicator;
   };
 
-  const calculateNewOrder = (
-    columnCards: CardType[],
-    beforeCard: CardType | null,
-    afterCard: CardType | null
-  ): number => {
-    if (!beforeCard && !afterCard) return 0;
-    if (!beforeCard) return afterCard!.order - 1;
-    if (!afterCard) return beforeCard.order + 1;
-    return beforeCard.order + (afterCard.order - beforeCard.order) / 2;
+  // Called when a drag operation starts on a card
+  const handleDragStart = (
+    event: React.DragEvent<HTMLDivElement>,
+    card: CardType
+  ) => {
+    // Store the dragged card's ID in the drag event, indicate that a card is being dragged
+    event.dataTransfer.setData("cardId", card.id);
+    setIsDragging(true);
   };
 
-  const handleDragEnd = async (e: React.DragEvent<HTMLDivElement>) => {
-    try {
-      const cardId = e.dataTransfer.getData("cardId");
-
-      setActive(false);
-      setIsDragging(false);
-      clearHighlights();
-      resetAllColumns();
-
-      const indicators = getIndicators();
-      const { element } = getNearestIndicator(e, indicators);
-      const before = element.dataset.before || "-1";
-
-      if (before !== cardId) {
-        // Find the card being moved
-        const cardToMove = cards.find((c) => c.id === cardId);
-        if (!cardToMove) return;
-
-        // Calculate and apply the move immediately
-        const columnCards = cards
-          .filter((c) => c.column === column)
-          .sort((a, b) => (a.order || 0) - (b.order || 0));
-
-        const insertIndex =
-          before === "-1"
-            ? columnCards.length
-            : columnCards.findIndex((c) => c.id === before);
-
-        const beforeCard =
-          insertIndex > 0 ? columnCards[insertIndex - 1] : null;
-        const afterCard =
-          insertIndex < columnCards.length ? columnCards[insertIndex] : null;
-
-        const newOrder = calculateNewOrder(columnCards, beforeCard, afterCard);
-
-        setCards((prevCards) =>
-          prevCards.map((c) =>
-            c.id === cardId
-              ? {
-                  ...c,
-                  column,
-                  order: newOrder,
-                  lastMovedTime: Date.now(),
-                }
-              : c
-          )
-        );
-      }
-    } catch (error) {
-      console.error("Failed to update card position:", error);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    highlightIndicator(e);
+  // Called when a dragged item is moved over the column
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    // Allow drop actions, highlight the column
+    event.preventDefault();
     setActive(true);
-  };
 
-  const highlightIndicator = (e: React.DragEvent<HTMLDivElement>) => {
-    const indicators = getIndicators();
-    clearHighlights(indicators);
-    const el = getNearestIndicator(e, indicators);
-    const line = el.element.querySelector("[data-indicator-line]");
-    if (line instanceof HTMLElement) {
-      line.style.opacity = "1";
+    // Find the nearest DropIndicator and show its highlight
+    const indicator = getNearestIndicator(event);
+    if (indicator) {
+      const line = indicator.querySelector("[data-indicator-line]");
+
+      // Highlight the nearest DropIndicator
+      if (line instanceof HTMLElement) {
+        line.style.opacity = "1";
+      }
     }
   };
 
+  // Called when a dragged item leaves the column
   const handleDragLeave = () => {
-    clearHighlights();
+    // Remove column highlight, clear any visible DropIndicator highlights
     setActive(false);
+    clearHighlights();
   };
 
-  // Reset state when drag is cancelled or mouse leaves window
-  React.useEffect(() => {
-    const handleDragEnd = () => {
+  // Called when a dragged item is dropped into the column
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setActive(false);
+    setIsDragging(false);
+    clearHighlights();
+
+    const cardId = event.dataTransfer.getData("cardId");
+    const indicator = getNearestIndicator(event);
+
+    if (!indicator) return;
+
+    // Get the ID of the card before which the dropped card should be inserted, find the dragged card in the list
+    const beforeId = indicator.dataset.before || "";
+    const cardToMove = cards.find((card) => card.id === cardId);
+
+    // Ignore invalid drop actions
+    if (!cardToMove || beforeId === cardId) {
+      return;
+    }
+
+    // Update the card list with the new order
+    setCards((prev) => {
+      // Remove the card being moved from its current position
+      const withoutMovedCard = prev.filter((c) => c.id !== cardId);
+
+      // Get all cards in this column and sort them by their order
+      const columnCards = withoutMovedCard
+        .filter((c) => c.column === column)
+        .sort((a, b) => a.order - b.order);
+
+      // Determine the new position of the dragged card
+      let position;
+      if (beforeId === "top") {
+        position = 0; // Insert at the beginning
+      } else if (beforeId === "bottom") {
+        position = columnCards.length; // Insert at the end
+      } else {
+        position = columnCards.findIndex((c) => c.id === beforeId);
+
+        // Default to the end if not found
+        if (position === -1) {
+          position = columnCards.length;
+        }
+      }
+
+      // Insert the card at the calculated position
+      columnCards.splice(position, 0, {
+        ...cardToMove,
+        column, // Update the card's column
+        lastMovedTime: Date.now(),
+      });
+
+      // Normalize the order values for all cards in the column
+      const updatedColumnCards = columnCards.map((card, index) => ({
+        ...card,
+        order: (index + 1) * 1000, // Set orders to ensure proper sorting
+      }));
+
+      // Merge the updated column cards with the rest of the cards
+      return prev.map(
+        (card) =>
+          updatedColumnCards.find((c) => c.id === card.id) ||
+          (card.id !== cardId ? card : { ...card, column })
+      );
+    });
+  };
+
+  // Adds event listeners to reset drag state on drag end or mouse leave
+  useEffect(() => {
+    const resetDragState = () => {
+      // Clear dragging state, remove column hightlight, clear all DropIndicator highlights
       setIsDragging(false);
       setActive(false);
       clearHighlights();
-      resetAllColumns();
     };
 
-    window.addEventListener("dragend", handleDragEnd);
-    window.addEventListener("mouseleave", handleDragEnd);
+    window.addEventListener("dragend", resetDragState);
+    window.addEventListener("mouseleave", resetDragState);
 
+    // Cleanup listeners on unmount
     return () => {
-      window.removeEventListener("dragend", handleDragEnd);
-      window.removeEventListener("mouseleave", handleDragEnd);
+      window.removeEventListener("dragend", resetDragState);
+      window.removeEventListener("mouseleave", resetDragState);
     };
-  }, []);
+  }, [clearHighlights]);
 
-  const filteredCards = cards
-    .filter((c) => c.column === column)
-    .sort((a, b) => (a.order || 0) - (b.order || 0));
+  // Filter cards for this column (excluding archived) and sort them by their order
+  const columnCards = cards
+    .filter((card) => card.column === column && !card.isArchived)
+    .sort((a, b) => a.order - b.order);
 
+  /* ----------------------------- Render function ---------------------------- */
   return (
     <div className="w-56 shrink-0">
+      {/* Column header */}
       <div className="mb-3 flex items-center justify-between">
         <h3 className={`font-medium ${headingColor}`}>{title}</h3>
         <span className="rounded text-sm text-neutral-400">
-          {filteredCards.length}
+          {columnCards.length}
         </span>
       </div>
+
+      {/* Drop zone */}
       <div
-        onDrop={handleDragEnd}
+        onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className={`h-full w-full transition-colors column-drop-zone ${
+        className={`h-full w-full transition-colors ${
           active ? "bg-neutral-800/50" : "bg-neutral-800/0"
         }`}
       >
-        {filteredCards.map((c) => {
-          return (
+        {/* Render cards and DropIndicators */}
+        {columnCards.map((card, index) => (
+          <React.Fragment key={card.id}>
+            {index === 0 && (
+              <DropIndicator beforeId={card.id} column={column} />
+            )}
             <Card
-              key={c.id}
-              {...c}
+              {...card}
               handleDragStart={handleDragStart}
               isDragging={isDragging}
               setCards={setCards}
               editorName={editorName}
               setEditorName={setEditorName}
             />
-          );
-        })}
-        <DropIndicator beforeId={null} column={column} />
+            <DropIndicator
+              beforeId={columnCards[index + 1]?.id}
+              column={column}
+            />
+          </React.Fragment>
+        ))}
+        {columnCards.length === 0 && (
+          <DropIndicator beforeId={null} column={column} />
+        )}
+
+        {/* Add card button */}
         <AddCard
           column={column}
           setCards={setCards}

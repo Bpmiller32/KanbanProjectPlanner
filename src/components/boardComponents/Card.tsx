@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { CardType } from "../../types/CardType";
-import { DropIndicator } from "./DropIndicator";
 import { FiTrash } from "react-icons/fi";
+import { FaRegEdit } from "react-icons/fa";
+import { EditCard } from "./EditCard";
+import { NameInput } from "./NameInput";
 
 interface CardProps extends CardType {
   handleDragStart: (e: React.DragEvent<HTMLDivElement>, card: CardType) => void;
@@ -30,95 +32,100 @@ export const Card = ({
   editorName,
   setEditorName,
 }: CardProps) => {
+  // States for editing and name input visibility
   const [isEditing, setIsEditing] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(title);
   const [showNameInput, setShowNameInput] = useState(false);
 
-  const handleArchive = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  // Function to handle archiving the card
+  const handleArchive = (event: React.MouseEvent) => {
+    // Prevent event from bubbling up
+    event.stopPropagation();
+
+    // Update the card's `isArchived` property
+    setCards((prevCards) =>
+      prevCards.map((card) =>
+        card.id === id
+          ? { ...card, isArchived: true, lastMovedTime: Date.now() }
+          : card
+      )
+    );
+  };
+
+  // Function to handle toggling the completion status of the card
+  const handleCompletedChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    // Prevent event from bubbling up
+    event.stopPropagation();
+
+    // Show name input if editor's name is not provided
+    if (!editorName.trim()) {
+      setShowNameInput(true);
+      return;
+    }
+
+    // Update the card's `completed` property and set the editor's information
     setCards((prevCards) =>
       prevCards.map((card) =>
         card.id === id
           ? {
               ...card,
-              isArchived: true,
-              lastMovedTime: Date.now(),
+              completed: !completed,
+              lastEditedBy: editorName.trim(),
+              lastEditedTime: Date.now(),
             }
           : card
       )
     );
   };
 
-  const handleCompletedChange = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    e.stopPropagation();
-    if (!editorName.trim()) {
-      setShowNameInput(true);
-    } else {
-      setCards((prevCards) =>
-        prevCards.map((card) =>
-          card.id === id
-            ? {
-                ...card,
-                completed: !completed,
-                createdAt,
-                lastEditedBy: editorName.trim(),
-                lastEditedTime: Date.now(),
-                lastMovedTime,
-                isArchived,
-              }
-            : card
-        )
-      );
-    }
-  };
-
-  const handleNameSubmit = (
-    action: "complete" | "edit" | "move",
-    newValue?: boolean | string
-  ) => {
-    if (!editorName.trim()) return;
-
+  // Function to handle updating the card's title
+  const handleUpdate = (newTitle: string) => {
     setCards((prevCards) =>
-      prevCards.map((card) => {
-        if (card.id !== id) return card;
-
-        const updatedCard = {
-          ...card,
-          createdAt,
-          lastEditedBy: editorName.trim(),
-          lastEditedTime: Date.now(),
-        };
-
-        switch (action) {
-          case "complete":
-            if (typeof newValue === "boolean") {
-              updatedCard.completed = newValue;
+      prevCards.map((card) =>
+        card.id === id
+          ? {
+              ...card,
+              title: newTitle,
+              lastEditedBy: editorName.trim(),
+              lastEditedTime: Date.now(),
             }
-            break;
-          case "edit":
-            if (typeof newValue === "string") {
-              updatedCard.title = newValue;
-            }
-            break;
-        }
-
-        return updatedCard;
-      })
+          : card
+      )
     );
 
-    setShowNameInput(false);
-    if (action === "edit") {
-      setIsEditing(false);
-    }
+    // Exit edit mode after updating
+    setIsEditing(false);
   };
 
-  const onDragStart = (e: React.DragEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    handleDragStart(e, {
-      title,
+  // Function to handle completing the card after name input
+  const handleNameInputComplete = () => {
+    if (!editorName.trim()) return;
+
+    setShowNameInput(false);
+    setCards((prevCards) =>
+      prevCards.map((card) =>
+        card.id === id
+          ? {
+              ...card,
+              completed: !completed,
+              lastEditedBy: editorName.trim(),
+              lastEditedTime: Date.now(),
+            }
+          : card
+      )
+    );
+  };
+
+  // Function to handle drag start events
+  const onDragStart = (event: React.DragEvent<HTMLDivElement>) => {
+    // Prevent event from bubbling up
+    event.stopPropagation();
+
+    // Pass the drag event and card details to the handler
+    handleDragStart(event, {
       id,
+      title,
       column,
       order,
       completed,
@@ -132,185 +139,82 @@ export const Card = ({
   };
 
   return (
-    <>
-      <DropIndicator beforeId={id} column={column} />
-      <motion.div layout layoutId={id} className="mb-2">
-        <div
-          draggable="true"
-          onDragStart={onDragStart}
-          className={`cursor-grab rounded border border-neutral-700 bg-neutral-800 p-3 active:cursor-grabbing transition-all duration-200 hover:bg-neutral-700 ${
-            isDragging ? "opacity-50" : ""
-          }`}
-        >
-          <div className="flex justify-between items-start gap-2 relative">
-            {showNameInput ? (
-              <div className="w-full p-2 bg-neutral-700 rounded">
-                <input
-                  type="text"
-                  value={editorName}
-                  onChange={(e) => setEditorName(e.target.value)}
-                  placeholder="Enter your name..."
-                  className="w-full bg-neutral-600 text-sm text-neutral-100 p-1 rounded outline-none mb-2"
-                  autoFocus
-                />
-                <div className="flex justify-end gap-2">
-                  <button
-                    onClick={() => setShowNameInput(false)}
-                    className="text-xs text-neutral-400 hover:text-neutral-100"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (isEditing) {
-                        handleNameSubmit("edit", editedTitle.trim());
-                      } else {
-                        handleNameSubmit("complete", !completed);
-                      }
-                    }}
-                    className="text-xs text-neutral-100 bg-neutral-600 px-2 py-1 rounded"
-                  >
-                    {isEditing ? "Save" : "Complete"}
-                  </button>
+    <motion.div layout layoutId={id} className="mb-2">
+      <div
+        draggable="true"
+        onDragStart={onDragStart}
+        className={`cursor-grab rounded border bg-neutral-800 p-3 ${
+          isDragging ? "opacity-50" : ""
+        } transition-all duration-250 hover:bg-neutral-700`}
+      >
+        <div className="flex justify-between items-start gap-2 relative">
+          {showNameInput ? (
+            // If checkbox has been clicked, show NameInput if no Name has been set
+            <NameInput
+              editorName={editorName}
+              setEditorName={setEditorName}
+              onSubmit={handleNameInputComplete}
+              onCancel={() => setShowNameInput(false)}
+            />
+          ) : isEditing ? (
+            // If the card is in edit mode, show the EditCard component
+            <EditCard
+              title={title}
+              editorName={editorName}
+              setEditorName={setEditorName}
+              onUpdate={handleUpdate}
+              onCancel={() => setIsEditing(false)}
+            />
+          ) : (
+            <>
+              {/* Checkbox for marking the card as completed */}
+              <input
+                type="checkbox"
+                checked={completed}
+                onChange={handleCompletedChange}
+                className="absolute left-0 top-1 cursor-pointer"
+              />
+
+              {/* Main content */}
+              <div className="flex-1 pl-6">
+                {/* // If not in edit mode, display the card's title and metadata */}
+                <p
+                  className="text-sm text-gray-100 whitespace-pre-wrap"
+                  style={{
+                    textDecoration: completed ? "line-through" : "none",
+                  }}
+                >
+                  {title}
+                </p>
+                <div className="mt-2 text-xs text-gray-400">
+                  {/* Display last edited by or created by information */}
+                  {lastEditedBy && lastEditedBy !== createdBy
+                    ? `Edited by ${lastEditedBy}`
+                    : `Created by ${createdBy}`}
                 </div>
               </div>
-            ) : (
-              <>
-                <input
-                  type="checkbox"
-                  checked={completed}
-                  onChange={handleCompletedChange}
-                  onClick={(e) => e.stopPropagation()}
-                  className="absolute left-0 top-1 cursor-pointer"
-                />
-                <div className="flex-1 pl-6">
-                  {isEditing ? (
-                    <div>
-                      <textarea
-                        style={{
-                          textDecoration: completed ? "line-through" : "none",
-                        }}
-                        value={editedTitle}
-                        onChange={(e) => setEditedTitle(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            if (!editorName.trim()) {
-                              setShowNameInput(true);
-                              return;
-                            }
-                            setCards((prevCards) =>
-                              prevCards.map((card) =>
-                                card.id === id
-                                  ? {
-                                      ...card,
-                                      title: editedTitle.trim(),
-                                      createdAt,
-                                      lastEditedBy: editorName.trim(),
-                                      lastEditedTime: Date.now(),
-                                      lastMovedTime,
-                                      isArchived,
-                                    }
-                                  : card
-                              )
-                            );
-                            setIsEditing(false);
-                          } else if (e.key === "Escape") {
-                            setEditedTitle(title);
-                            setIsEditing(false);
-                          }
-                        }}
-                        className="w-full bg-neutral-700 text-sm text-neutral-100 p-1 rounded outline-none resize-none min-h-[1.5rem] mb-2"
-                        autoFocus
-                        rows={editedTitle.split("\n").length}
-                      />
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => {
-                            setEditedTitle(title);
-                            setIsEditing(false);
-                          }}
-                          className="text-xs text-neutral-400 hover:text-neutral-100"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (!editorName.trim()) {
-                              setShowNameInput(true);
-                              return;
-                            }
-                            setCards((prevCards) =>
-                              prevCards.map((card) =>
-                                card.id === id
-                                  ? {
-                                      ...card,
-                                      title: editedTitle.trim(),
-                                      createdAt,
-                                      lastEditedBy: editorName.trim(),
-                                      lastEditedTime: Date.now(),
-                                      lastMovedTime,
-                                      isArchived,
-                                    }
-                                  : card
-                              )
-                            );
-                            setIsEditing(false);
-                          }}
-                          className="text-xs text-neutral-100 bg-neutral-600 px-2 py-1 rounded"
-                        >
-                          Save changes
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <p
-                      className="text-sm text-neutral-100 whitespace-pre-wrap"
-                      style={{
-                        textDecoration: completed ? "line-through" : "none",
-                      }}
-                    >
-                      {title}
-                    </p>
-                  )}
-                  <div className="mt-2 text-xs text-neutral-400">
-                    Created by {createdBy}
-                    {lastEditedBy !== createdBy &&
-                      ` • Last edited by ${lastEditedBy}`}
-                    <div className="text-neutral-500">
-                      {createdAt &&
-                        `Created ${new Date(createdAt).toLocaleString()}`}
-                      {` • Last edited ${new Date(
-                        lastEditedTime
-                      ).toLocaleString()}`}
-                      {` • Last moved ${new Date(
-                        lastMovedTime
-                      ).toLocaleString()}`}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsEditing(true);
-                    }}
-                    className="text-neutral-400 hover:text-neutral-100 transition-colors"
-                  >
-                    ✎
-                  </button>
-                  <button
-                    onClick={handleArchive}
-                    className="text-neutral-400 hover:text-red-400 transition-colors"
-                  >
-                    <FiTrash />
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-2">
+                {/* Edit button to enter edit mode */}
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="text-gray-400 hover:text-gray-100 transition-colors duration-[250ms]"
+                >
+                  <FaRegEdit />
+                </button>
+                {/* Archive button */}
+                <button
+                  onClick={handleArchive}
+                  className="text-gray-400 hover:text-red-400 transition-colors duration-[250ms]"
+                >
+                  <FiTrash />
+                </button>
+              </div>
+            </>
+          )}
         </div>
-      </motion.div>
-    </>
+      </div>
+    </motion.div>
   );
 };

@@ -1,6 +1,6 @@
 interface ButtonProps {
   text?: string;
-  bgColor?: "indigo" | "red" | "blue";
+  bgColor?: "indigo" | "red" | "blue" | "gray";
   onClick?: () => void;
 }
 
@@ -9,6 +9,7 @@ const bgColorClasses = {
   indigo: "bg-indigo-600 hover:bg-indigo-500",
   red: "bg-red-600 hover:bg-red-500",
   blue: "bg-blue-600 hover:bg-blue-500",
+  gray: "bg-gray-600 hover:bg-gray-500",
 };
 
 export const Button = ({

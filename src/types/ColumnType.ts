@@ -1,1 +1,5 @@
-export type ColumnType = "backlog" | "todo" | "doing" | "done";
+export interface ColumnType {
+  title: string;
+  column: string;
+  color: string;
+}

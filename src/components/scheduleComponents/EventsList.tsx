@@ -187,10 +187,9 @@ export const EventsList = ({ events }: EventsProps) => {
                 {/* Additional information about the event, shown only if the title is not "unnamed event" */}
                 {event.title !== "unnamed event" && (
                   <p className="text-xs text-gray-400 flex justify-center w-full sm:block">
-                    Created by {event.createdBy}
-                    {/* Show "Last edited by" only if the editor is different from the creator */}
-                    {event.lastEditedBy !== event.createdBy &&
-                      ` • Last edited by ${event.lastEditedBy}`}
+                    {event.lastEditedBy && event.lastEditedBy !== event.createdBy
+                      ? `Last edited by ${event.lastEditedBy}`
+                      : `Created by ${event.createdBy}`}
                   </p>
                 )}
               </div>

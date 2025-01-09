@@ -1,9 +1,7 @@
-import { ColumnType } from "./ColumnType";
-
 export interface CardType {
   id: string;
   title: string;
-  column: ColumnType;
+  column: string;
   order: number;
   completed?: boolean;
   createdBy: string;

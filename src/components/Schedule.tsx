@@ -14,6 +14,7 @@ export const Schedule = () => {
     // Reference to the "events" collection in the Firestore database.
     const eventsRef = collection(db, "events");
 
+    // Subscribe to real-time updates from Firestore
     const unsubscribe = onSnapshot(eventsRef, (snapshot) => {
       // Map Firestore documents into an array of event objects, adding an "isArchived" property if not present, then filter out events that are marked as archived.
       const eventsData = snapshot.docs
