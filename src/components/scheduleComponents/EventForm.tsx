@@ -1,5 +1,7 @@
 import { CalendarEvent } from "../../types/CalendarEvent";
+import { Button } from "../sharedComponents/Button";
 import { InputField } from "./InputField";
+import { motion } from "framer-motion";
 
 interface EventFormProps {
   isEditing: boolean;
@@ -22,11 +24,25 @@ export const EventForm = ({
   onCancel,
   onSubmit,
 }: EventFormProps) => {
+  const handleSubmission = () => {
+    console.log("Handling submission", { showNameInput, editorName });
+    if (showNameInput && !editorName.trim()) {
+      console.log("No name provided, returning");
+      return;
+    }
+    console.log("Calling onSubmit");
+    onSubmit(new Event("submit") as unknown as React.FormEvent);
+    console.log("onSubmit called");
+  };
+
   /* ----------------------------- Render function ---------------------------- */
   return (
-    <form
-      onSubmit={onSubmit}
-      className="mb-6 space-y-4 bg-gray-50 p-4 rounded-lg"
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      className="mb-6 space-y-4 bg-gray-50 p-4 rounded-lg overflow-hidden"
     >
       {showNameInput ? (
         <InputField
@@ -35,6 +51,12 @@ export const EventForm = ({
           value={editorName}
           onChange={(e) => onNameChange(e.target.value)}
           autoFocus
+          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === "Enter" && editorName.trim()) {
+              e.preventDefault();
+              handleSubmission();
+            }
+          }}
         />
       ) : (
         <>
@@ -52,31 +74,28 @@ export const EventForm = ({
             onChange={(e) => {
               const date = new Date(e.target.value);
               const offset = date.getTimezoneOffset();
-              const adjustedDate = new Date(date.getTime() - offset * 60 * 1000);
-              onEventChange("date", adjustedDate.toISOString().split('T')[0]);
+              const adjustedDate = new Date(
+                date.getTime() - offset * 60 * 1000
+              );
+              onEventChange("date", adjustedDate.toISOString().split("T")[0]);
             }}
           />
         </>
       )}
       <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          className="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-500"
-        >
-          {showNameInput
-            ? "Continue"
-            : isEditing
-            ? "Update event"
-            : "Add event"}
-        </button>
+        <Button onClick={onCancel} text="Cancel" bgColor="gray" />
+        <Button
+          onClick={handleSubmission}
+          text={
+            showNameInput
+              ? "Continue"
+              : isEditing
+              ? "Update event"
+              : "Add event"
+          }
+          bgColor={showNameInput ? "blue" : isEditing ? "blue" : "indigo"}
+        />
       </div>
-    </form>
+    </motion.div>
   );
 };

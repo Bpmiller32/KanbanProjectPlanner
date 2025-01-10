@@ -1,14 +1,35 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Dispatch, SetStateAction } from "react";
 import { db } from "../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { CalendarEvent } from "../types/CalendarEvent";
 import { EventsList } from "./scheduleComponents/EventsList";
 import { Calendar } from "./scheduleComponents/Calendar";
+import { CardType } from "../types/CardType";
 
-export const Schedule = () => {
-  // States to store the list of events fetched from the Firestore database, count of events for each date.
+interface ScheduleProps {
+  setCards: (updater: SetStateAction<CardType[]>) => Promise<void>;
+  editorName: string;
+  setEditorName: Dispatch<SetStateAction<string>>;
+}
+
+export const Schedule = ({ setCards, editorName, setEditorName }: ScheduleProps) => {
+  // States to store the list of events and current month
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [eventCounts, setEventCounts] = useState<{ [key: string]: number }>({});
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const today = new Date();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const year = today.getFullYear();
+    return `${year}-${month}`;
+  });
+
+  // Ensure currentMonth is in correct format
+  useEffect(() => {
+    const date = new Date();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    setCurrentMonth(`${year}-${month}`);
+  }, []);
 
   useEffect(() => {
     // Reference to the "events" collection in the Firestore database.
@@ -20,8 +41,8 @@ export const Schedule = () => {
       const eventsData = snapshot.docs
         .map((doc) => ({
           id: doc.id, // Include the document ID as part of the event data.
-          date: doc.data().date || '', // Default date to empty string if undefined
-          startTime: doc.data().startTime || '', // Default startTime to empty string if undefined
+          date: doc.data().date || "", // Default date to empty string if undefined
+          startTime: doc.data().startTime || "", // Default startTime to empty string if undefined
           ...doc.data(), // Spread the rest of the document data.
           isArchived: doc.data().isArchived || false, // Default "isArchived" to false if it's undefined.
         }))
@@ -70,10 +91,19 @@ export const Schedule = () => {
 
   /* ----------------------------- Render function ---------------------------- */
   return (
-    <div className="flex justify-center">
+    <div className="flex justify-center select-none">
       <div className="w-full px-6 max-w-[1024px] ">
-        <Calendar eventCounts={eventCounts} />
-        <EventsList events={events} />
+        <Calendar 
+          eventCounts={eventCounts} 
+          onMonthChange={(month) => setCurrentMonth(month)}
+        />
+        <EventsList 
+          events={events} 
+          setCards={setCards}
+          editorName={editorName}
+          setEditorName={setEditorName}
+          currentMonth={currentMonth}
+        />
       </div>
     </div>
   );

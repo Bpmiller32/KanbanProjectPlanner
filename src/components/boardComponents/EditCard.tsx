@@ -63,8 +63,12 @@ export const EditCard = ({
             autoFocus
           />
           <div className="flex gap-2">
-            <Button onClick={handleSubmitClicked} text="Update card" />
             <Button onClick={onCancel} text="Cancel" bgColor="gray" />
+            <Button
+              onClick={handleSubmitClicked}
+              text="Update card"
+              bgColor="blue"
+            />
           </div>
         </>
       )}

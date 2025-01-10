@@ -152,7 +152,7 @@ export const Card = ({
         onDragStart={onDragStart}
         className={`cursor-grab rounded border border-gray-100 bg-neutral-800 p-3 ${
           isDragging ? "opacity-50" : ""
-        } transition-all duration-250 hover:bg-neutral-700 select-none`}
+        } transition-all duration-250 hover:bg-neutral-700`}
       >
         <div className="flex justify-between items-start gap-2 relative">
           {showNameInput ? (

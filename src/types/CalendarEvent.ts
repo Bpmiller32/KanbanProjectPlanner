@@ -1,7 +1,7 @@
 export interface CalendarEvent {
   id: string;
   title: string;
-  date?: string;  // Made optional since we handle undefined dates
+  date?: string;
   startTime?: string;
   endTime?: string;
   isAllDay?: boolean;

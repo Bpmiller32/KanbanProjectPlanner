@@ -1,6 +1,6 @@
 import { Dispatch, FormEvent, SetStateAction, useState } from "react";
 import { CardType } from "../../types/CardType";
-import { FiPlus } from "react-icons/fi";
+import { Button } from "../sharedComponents/Button";
 
 type AddCardProps = {
   column: string;
@@ -121,31 +121,20 @@ export const AddCard = ({
             />
           )}
           <div className="mt-1.5 flex items-center justify-end gap-1.5">
-            <button
-              type="button"
-              onClick={handleCloseClicked}
-              className="px-3 py-1.5 text-xs text-neutral-400 transition-colors hover:text-neutral-50"
-            >
-              Close
-            </button>
-            <button
-              type="submit"
-              className="flex items-center gap-1.5 rounded bg-neutral-50 px-3 py-1.5 text-xs text-neutral-950 transition-colors hover:bg-neutral-300"
-            >
-              <span>{showNameInput ? "Save" : "Create Card"}</span>
-              <FiPlus />
-            </button>
+            <Button
+              onClick={handleCloseClicked} // Call handleCloseClicked when clicked
+              text="Close" // Text for the button
+              bgColor="gray" // Background color for the "Close" button
+            />
+            <Button
+              onClick={() => handleSubmit}
+              text={showNameInput ? "Save" : "Create Card"}
+            />
           </div>
         </form>
       ) : (
         // Button to open the add card form
-        <button
-          onClick={handleAddClicked}
-          className="flex w-full items-center gap-1.5 px-3 py-1.5 text-xs text-neutral-400 transition-colors hover:text-neutral-50"
-        >
-          <span>Add card</span>
-          <FiPlus />
-        </button>
+        <Button onClick={handleAddClicked} text="Add card" bgColor="indigo" />
       )}
     </>
   );

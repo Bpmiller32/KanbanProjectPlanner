@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { db } from "../../firebase";
 import {
   collection,
@@ -17,26 +17,32 @@ import { AnimatePresence, motion } from "framer-motion";
 
 interface CalendarProps {
   eventCounts: { [date: string]: number };
+  onMonthChange: (month: string) => void;
 }
 
-export const Calendar = ({ eventCounts }: CalendarProps) => {
+export const Calendar = ({ eventCounts, onMonthChange }: CalendarProps) => {
   // State to store the the currently displayed month, generate calendar data for the current and next month.
   const [currentDate, setCurrentDate] = useState(new Date());
   const months = Utils.generateCalendarData(currentDate);
 
+  // Update month whenever currentDate changes
+  useEffect(() => {
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const year = currentDate.getFullYear();
+    const formattedMonth = `${year}-${month}`;
+    console.log('Calendar: Emitting month change:', formattedMonth);
+    onMonthChange(formattedMonth);
+  }, [currentDate, onMonthChange]);
+
   // Move to the previous month
   const handlePrevMonthClicked = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
-    );
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   };
 
   /* --------------------------------- Events --------------------------------- */
   // Move to the next month
   const handleNextMonthClicked = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
-    );
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
   // Handle a date click, either adding or removing unnamed events
@@ -134,7 +140,7 @@ export const Calendar = ({ eventCounts }: CalendarProps) => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-sm font-semibold text-gray-100 cursor-default select-none"
+            className="text-sm font-semibold text-gray-100 cursor-default"
           >
             {`${month.name} ${month.year}`}
           </motion.h2>
@@ -144,7 +150,7 @@ export const Calendar = ({ eventCounts }: CalendarProps) => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="mt-6 grid grid-cols-7 text-xs text-gray-400 cursor-default select-none"
+            className="mt-6 grid grid-cols-7 text-xs text-gray-400 cursor-default"
           >
             <div>S</div>
             <div>M</div>
@@ -158,7 +164,7 @@ export const Calendar = ({ eventCounts }: CalendarProps) => {
           {/* Days Grid */}
           <motion.div
             key={`days-grid-${month.name}-${month.year}`}
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="mt-2 grid grid-cols-7 gap-px bg-gray-200 text-sm rounded-lg"

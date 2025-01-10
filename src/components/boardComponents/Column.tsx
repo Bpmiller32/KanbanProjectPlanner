@@ -202,7 +202,7 @@ export const Column = ({
   return (
     <div className="w-56 shrink-0">
       {/* Column header */}
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between cursor-default">
         <h3 className={`font-medium ${headingColor}`}>{title}</h3>
         <span className="rounded text-sm text-neutral-400">
           {columnCards.length}
