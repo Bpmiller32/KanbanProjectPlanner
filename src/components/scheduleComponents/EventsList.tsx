@@ -292,7 +292,7 @@ export const EventsList = ({
       </AnimatePresence>
 
       {/* Events List Container */}
-      <div className="mt-2 relative bg-neutral-800 rounded-lg">
+      <div className="mt-2 relative bg-neutral-800 rounded-lg border border-gray-100">
         <ol className="text-sm/6 text-gray-400 max-h-[275px] min-h-[275px] overflow-y-auto pr-4 pl-2 py-2 relative">
           {events.length === 0 ? (
             <motion.li

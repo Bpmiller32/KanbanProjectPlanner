@@ -20,6 +20,7 @@ export const Button = ({
   /* ----------------------------- Render function ---------------------------- */
   return (
     <button
+      type="button"
       onClick={onClick}
       className={`px-3 py-1.5 text-sm font-medium text-gray-100 rounded-md ${bgColorClasses[bgColor]} duration-[250ms]`}
     >

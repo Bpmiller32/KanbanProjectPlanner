@@ -40,8 +40,8 @@ export const NameInput = ({
         autoFocus
       />
       <div className="flex gap-2">
-        <Button onClick={handleSubmitClicked} text="Submit" />
         <Button onClick={handleCancelClicked} text="Cancel" bgColor="gray" />
+        <Button onClick={handleSubmitClicked} text="Submit" bgColor="blue" />
       </div>
     </div>
   );

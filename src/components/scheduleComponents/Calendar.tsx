@@ -27,22 +27,25 @@ export const Calendar = ({ eventCounts, onMonthChange }: CalendarProps) => {
 
   // Update month whenever currentDate changes
   useEffect(() => {
-    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const month = String(currentDate.getMonth() + 1).padStart(2, "0");
     const year = currentDate.getFullYear();
     const formattedMonth = `${year}-${month}`;
-    console.log('Calendar: Emitting month change:', formattedMonth);
     onMonthChange(formattedMonth);
   }, [currentDate, onMonthChange]);
 
   // Move to the previous month
   const handlePrevMonthClicked = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+    );
   };
 
   /* --------------------------------- Events --------------------------------- */
   // Move to the next month
   const handleNextMonthClicked = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
+    );
   };
 
   // Handle a date click, either adding or removing unnamed events
